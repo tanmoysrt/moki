@@ -5,6 +5,7 @@
 const app = {
   dark: document.documentElement.classList.contains('dark'),
   projects: [], // newest first
+  agent: '', // the agent that connected last, '' before the first one
   detail: {}, // slug -> project with its versions in `list`, newest first
   fresh: {}, // slug -> {v4: true}: versions that arrived while the user looked at an older one
   route: { name: 'home' },
@@ -16,7 +17,7 @@ const app = {
 
 async function start() {
   try {
-    await loadProjects()
+    await Promise.all([loadProjects(), loadAgent()])
   } catch (e) {
     app.down = true
   }
@@ -85,6 +86,10 @@ async function loadProjects() {
   app.projects = list.sort((a, b) => new Date(b.time) - new Date(a.time))
 }
 
+async function loadAgent() {
+  app.agent = (await getJSON('/api/agent'))?.name || ''
+}
+
 async function loadProject(slug, reload = false) {
   if (app.detail[slug] && !reload) return app.detail[slug]
   const p = await getJSON(`/api/projects/${encodeURIComponent(slug)}`)
@@ -120,6 +125,7 @@ function listen() {
   }
   events.addEventListener('change', (e) => queueRefresh(JSON.parse(e.data)))
   events.addEventListener('thumb', () => queueRefresh())
+  events.addEventListener('agent', () => queueRefresh())
 }
 
 let queued = []
@@ -137,7 +143,7 @@ async function refresh() {
   const before = app.projects
   queued = []
   try {
-    await loadProjects()
+    await Promise.all([loadProjects(), loadAgent()])
   } catch (e) {
     return setDown()
   }

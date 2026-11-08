@@ -130,34 +130,73 @@
 
 /* ---------- first run ---------- */
 
-.empty {
-  max-width: 560px;
-  margin: 72px auto 0;
-  padding: 32px;
-  text-align: center;
+.first {
+  max-width: 440px;
+  margin: 18vh auto 0;
+  padding: 0 16px 48px;
 }
 
-.empty .mark {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 16px;
+.first h1 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--hi);
 }
 
-.empty h1 {
-  margin: 0;
-  font-size: 22px;
-  line-height: 30px;
+.first ol {
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.empty p {
-  max-width: 420px;
-  margin: 6px auto 0;
+.first li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.first li:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.first .what {
+  flex: 1;
+  min-width: 0;
+}
+
+.first b {
+  display: block;
+  font-weight: 500;
+  color: var(--hi);
+}
+
+.first small {
+  display: block;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.first .prompt {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
   color: var(--muted);
 }
 
-.empty .primary {
-  margin-top: 24px;
+.state i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
 }
 
 @media (max-width: 640px) {
@@ -175,8 +214,7 @@
     gap: 14px;
   }
 
-  .empty {
-    margin-top: 24px;
-    padding: 24px 16px;
+  .first {
+    margin-top: 12vh;
   }
 }

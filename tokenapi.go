@@ -12,6 +12,15 @@ import (
 
 func (s *Server) tokenRoutes() {
 	s.mux.HandleFunc("POST /api/tokens", s.apiMakeToken)
+	s.mux.HandleFunc("GET /api/agent", s.apiAgent)
+}
+
+// apiAgent names the agent that connected last, so the first-run page can say it is
+// connected. It is "" until an agent sends its first MCP request.
+func (s *Server) apiAgent(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, r, struct {
+		Name string `json:"name"`
+	}{s.tokens.LastAgent()})
 }
 
 // apiMakeToken makes a token and returns the guide with it, set to the URL in the

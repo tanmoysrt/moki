@@ -41,6 +41,7 @@ func NewServer(cfg Config) *Server {
 	s.shots = NewShooter(cfg)
 	s.thumbs = NewThumbs(s)
 	s.hub = NewHub(s.thumbs.Queue)
+	s.tokens.onFirst = func() { s.hub.Publish(Event{Type: "agent"}) }
 	s.routes()
 	go s.hub.Watch(cfg.Dir)
 	go s.thumbs.Run()

@@ -26,6 +26,7 @@
 
   /* accents */
   --live: #2563eb;
+  --ok: #16a34a;
   --danger: #dc2626;
 
   /* shadows */
@@ -51,6 +52,7 @@
   --dim: #7c7c7c;
 
   --live: #3b82f6;
+  --ok: #22c55e;
   --danger: #ef4444;
 
   --xs: 0 0 0 1px rgba(255, 255, 255, 0.06);

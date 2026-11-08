@@ -1,4 +1,4 @@
-// Projects home: the top bar, the gallery and the first-run card.
+// Projects home: the top bar, the gallery and the first-run steps.
 
 function topBar() {
   const search = app.projects.length > 0
@@ -7,11 +7,16 @@ function topBar() {
     ${search ? searchBox() : ''}
     <div class="sp"></div>
     ${themeButton()}
-    <button class="btn connect" data-act="connect" aria-label="Connect an agent">
-      ${icon('plug')}<span class="label">Connect agent</span>
-    </button>
+    ${firstStep() ? '' : connectButton()}
   </header>`
 }
+
+const connectButton = () => `<button class="btn connect" data-act="connect" aria-label="Connect an agent">
+    ${icon('plug')}<span class="label">Connect agent</span>
+  </button>`
+
+// firstStep is true while the home shows its own Connect button, so the bar leaves its out.
+const firstStep = () => !app.down && app.route.name === 'home' && !app.projects.length && !app.agent
 
 function searchBox() {
   return `<label class="search">
@@ -134,13 +139,28 @@ function thumbFailed(img) {
 
 // ---------- first run ----------
 
+// emptyState shows two steps: connect an agent, then ask it for a mockup. Step 1 says
+// "Connected" once an agent has used its token.
 function emptyState() {
-  return `<main class="wrap">
-    <section class="card empty">
-      <div class="mark">${LOGO}</div>
-      <h1>No mockups yet</h1>
-      <p>Connect an agent, then ask it for a mockup.</p>
-      <button class="btn primary" data-act="connect">${icon('plug')}Connect agent</button>
-    </section>
+  const agent = app.agent
+  return `<main class="first">
+    <h1>${agent ? 'Ask for your first mockup' : 'Get your first mockup'}</h1>
+    <ol>
+      <li>
+        <span class="what">
+          <b>Connect an agent</b>
+          <small class="trunc">${agent ? esc(agent) : 'Claude Code, Codex, Cursor or any MCP tool'}</small>
+        </span>
+        ${agent
+          ? '<span class="state"><i></i>Connected</span>'
+          : `<button class="btn primary" data-act="connect">${icon('plug')}Connect</button>`}
+      </li>
+      <li>
+        <span class="what">
+          <b>Ask it for a mockup</b>
+          <small class="trunc prompt">"Mock up a pricing page with three options"</small>
+        </span>
+      </li>
+    </ol>
   </main>`
 }

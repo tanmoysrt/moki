@@ -12,12 +12,13 @@ import (
 	"time"
 )
 
-// Tokens is the tokens file: one "<RFC 3339 time> <token> <name>" per line.
+// Tokens is the tokens file: one "<RFC 3339 time> <token> <name> [<first use>]" per line.
 // The CLI and the connect dialog write it. moki reads it on each MCP request,
 // so a revoke works at once.
 type Tokens struct {
-	path string
-	mu   sync.Mutex
+	path    string
+	mu      sync.Mutex
+	onFirst func() // runs when an agent uses a token for the first time
 }
 
 // Token is one agent's key. Its value starts with its name: mk_brave-otter_K7Q2...
@@ -25,6 +26,7 @@ type Token struct {
 	Time  time.Time
 	Value string
 	Name  string
+	Used  time.Time // the first MCP request with it, zero before that
 }
 
 // Make adds a token with a new name and returns it.
@@ -65,7 +67,51 @@ func (t *Tokens) Revoke(name string) error {
 	if !found {
 		return fmt.Errorf("no token has the name %q", name)
 	}
-	return os.WriteFile(t.path, []byte(strings.Join(keep, "")), 0o600)
+	return t.write(keep)
+}
+
+// MarkUsed records the first use of a token. Later uses change nothing.
+func (t *Tokens) MarkUsed(tok Token) {
+	if !tok.Used.IsZero() {
+		return
+	}
+	t.mu.Lock()
+	var lines []string
+	first := false // another request may have marked it already
+	for _, x := range t.List() {
+		if x.Value == tok.Value && x.Used.IsZero() {
+			x.Used, first = time.Now().UTC(), true
+		}
+		lines = append(lines, x.line())
+	}
+	if first && t.write(lines) != nil {
+		first = false
+	}
+	t.mu.Unlock()
+	if first && t.onFirst != nil {
+		t.onFirst()
+	}
+}
+
+// LastAgent names the token that an agent used first most recently, or "" for none.
+func (t *Tokens) LastAgent() string {
+	last := Token{}
+	for _, x := range t.List() {
+		if x.Used.After(last.Used) {
+			last = x
+		}
+	}
+	return last.Name
+}
+
+// write replaces the file through a rename, so a request that reads it at the
+// same time sees the old tokens or the new ones, never half of them.
+func (t *Tokens) write(lines []string) error {
+	tmp := t.path + ".tmp"
+	if err := os.WriteFile(tmp, []byte(strings.Join(lines, "")), 0o600); err != nil {
+		return err
+	}
+	return os.Rename(tmp, t.path)
 }
 
 func (t *Tokens) List() []Token {
@@ -81,13 +127,20 @@ func (t *Tokens) List() []Token {
 		if len(f) > 2 {
 			tok.Name = f[2]
 		}
+		if len(f) > 3 {
+			tok.Used, _ = time.Parse(time.RFC3339, f[3])
+		}
 		list = append(list, tok)
 	}
 	return list
 }
 
 func (t Token) line() string {
-	return fmt.Sprintf("%s %s %s\n", t.Time.Format(time.RFC3339), t.Value, t.Name)
+	used := ""
+	if !t.Used.IsZero() {
+		used = " " + t.Used.Format(time.RFC3339)
+	}
+	return fmt.Sprintf("%s %s %s%s\n", t.Time.Format(time.RFC3339), t.Value, t.Name, used)
 }
 
 // Find returns the token with this value. It compares every token in constant time.
@@ -114,13 +167,15 @@ func (t *Tokens) Name(header string) string {
 // Require lets a request through only with a valid bearer token.
 func (t *Tokens) Require(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tok, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if _, known := t.Find(strings.TrimSpace(tok)); !ok || !known {
+		value, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+		tok, known := t.Find(strings.TrimSpace(value))
+		if !ok || !known {
 			activity.Warn("an MCP request from %s has a missing or unknown token", r.RemoteAddr)
 			w.Header().Set("WWW-Authenticate", `Bearer realm="moki"`)
 			http.Error(w, `missing or unknown token. Make one in moki with "Connect agent", or run "moki token register"`, http.StatusUnauthorized)
 			return
 		}
+		t.MarkUsed(tok)
 		h.ServeHTTP(w, r)
 	})
 }

@@ -46,7 +46,7 @@ All decisions are from 2026-11-08.
 
 19. Projects home is a gallery of cards. No primary button, because the UI makes nothing.
 20. The viewer bar is 44 px high: back, title, version pills, theme, open in a new tab. Rejected: the screenshot button, mode labels that change the bar width.
-21. No eyebrows, no subtitles that repeat a fact, no folder tree on the first-run card.
+21. No eyebrows, no subtitles that repeat a fact, no folder tree on the first-run page.
 22. One theme for moki and the mockup inside it. Mockups have no theme toggle of their own.
 23. Live update: the viewer follows the newest version with a cross-fade. On an older version it stays and shows a blue dot on the new pill.
 24. Daily use: the arrow keys and Esc also work when the focus is inside the page. Stepping versions keeps the scroll position. The tab title names the project and version. Every response is `no-cache` with an `ETag`.
@@ -100,7 +100,7 @@ moki needs Chrome or Chromium on the machine for screenshots. Everything else wo
 
 ### Tokens
 
-- A line in `tokens` is `<RFC 3339 time> <token> <name>`. moki picks the name, such as `brave-otter`, unique among the tokens, and the token starts with it. For example: `2026-11-08T12:40:00Z mk_brave-otter_7HQ2XV9PLR3A91FK4M2N brave-otter`.
+- A line in `tokens` is `<RFC 3339 time> <token> <name> [<first use>]`. moki adds the first use when an agent sends its first MCP request with the token. moki picks the name, such as `brave-otter`, unique among the tokens, and the token starts with it. For example: `2026-11-08T12:40:00Z mk_brave-otter_7HQ2XV9PLR3A91FK4M2N brave-otter`.
 - `POST /api/tokens` makes a token. The CLI makes, lists and revokes them. Lists show the name and the time.
 - The browser may make tokens when the request comes from a moki page (the `Origin` host is the `Host`), and either basic auth is set or the request comes from loopback to a loopback name. The name check stops DNS rebinding. In Docker every request comes from the gateway, so the browser cannot make tokens there without basic auth.
 - moki reads `tokens` on each MCP request, so a revoke takes effect at once.
@@ -175,7 +175,7 @@ All routes use plain HTTP.
 | `GET /p/<slug>/<version>/...` | Files of one version. moki serves only paths of this shape, so `tokens`, `memory` and `.cache` stay private. |
 | `GET /api/projects` | Projects with title, description, version count, time and thumbnail URLs |
 | `GET /api/projects/<slug>` | Versions with note and time |
-| `GET /api/events` | Server-sent events. One `change` event for each new or changed version. |
+| `GET /api/events` | Server-sent events. One `change` event for each new or changed version, and one `agent` event when an agent uses its token for the first time. |
 | `GET /health` | `moki <version>`. The guide and `moki` use it to check that the server runs. |
 | `GET /thumb/<slug>/<version>.png?dark=1` | The cached thumbnail for the theme |
 | `GET /llm-guide.txt` | The LLM guide |
@@ -183,6 +183,7 @@ All routes use plain HTTP.
 | `GET /kit/board.js`, `/kit/theme.js`, `/kit/inter.woff2` | Optional helpers: the options board, the theme helper and the Inter font |
 | `GET /_sheet?ids=` | The internal page that moki takes a shot of to make a sheet |
 | `POST /api/tokens` | Makes a token. Returns its name and the guide with the token in it, set to the URL in the browser. 403 when this browser may not make tokens. |
+| `GET /api/agent` | The name of the token an agent used first most recently, or `""` before any agent connects. The first-run page shows it. |
 | `POST /mcp` | MCP. Needs `Authorization: Bearer <token>`. |
 
 The UI gets changes from `/api/events`. See [Live update](#live-update).
@@ -472,7 +473,7 @@ Do the milestones in order. Each milestone ends with a working binary.
 ### M2. UI
 
 - [ ] Move the prototype to `assets/ui/` and load the data from `/api`.
-- [ ] Projects home: gallery, search with `/`, first-run card when there are no projects.
+- [ ] Projects home: gallery, search with `/`, first-run steps when there are no projects: connect an agent (it says Connected once one has), then ask it for a mockup.
 - [ ] Viewer: the page in an iframe, version pills, the phone stepper, the 44 px bar.
 - [ ] Keys: left and right arrows, Esc, also from inside the page. Keep the scroll position between versions.
 - [ ] Tab title `<project> v3 · moki`.

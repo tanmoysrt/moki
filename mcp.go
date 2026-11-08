@@ -22,6 +22,7 @@ Rules:
 
 Each round:
 1. get_project(slug) before you work on a project. It has the memory of past rounds.
+   For a new project: search the memory with list_memory and query, and look at the user's product first.
 2. Follow the design skill (resource moki://design-skill).
 3. upload a new version. Use base with only the changed files, or dir when you run on the moki machine.
    Give index.html a <title> (the project title) and <meta name="description"> (what is new in this round).
@@ -124,7 +125,8 @@ Brief:
 %s
 
 Steps:
-1. Read the design skill below and follow it.
+1. Read the design skill below and follow it. Do its "Before you start" steps first:
+   search the memory and look at my product.
 2. Make one index.html that shows the options of this round. Give it a <title> and a <meta name="description">.
 3. Call upload with slug %q. Read the sheet and the warnings, and fix them with upload version: "v1".
 4. Call screenshot with themes: "both". Add full: true for long pages.

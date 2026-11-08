@@ -9,6 +9,12 @@ This skill is guidance, not a format. moki shows any page you make. Use what hel
 
 Mockup first: before you change UI, refactor a screen or design a new page, make the mockup and get the user's OK. Read this skill again at the start of each chat.
 
+## Before you start
+
+1. Search the memory: `list_memory` with a `query` for this kind of screen or part, for example "table" or "invite". Follow what the user decided before. For a project that exists, `get_project` gives you its memory.
+2. Look at the user's product. Open the screens near the one you design, or read the codebase: design tokens, components, fonts, icon set. Match them, unless the brief asks for something new.
+3. When the brief leaves the main question open, ask the user one short question before you design.
+
 ## The target
 
 - Calm, minimal, bold where it counts. One clear idea per screen.
@@ -95,7 +101,6 @@ window.BOARD = {
 ## Rounds
 
 - Read the memory before each round. It has the brief and the decisions of earlier chats.
-- Before a new project, search the memory of other projects with `list_memory` and `query`, for example "table". Follow the taste that the user showed there.
 - Each round of feedback is a new version.
 - Keep the options that the user liked. Drop the ones the user rejected.
 - Do not change a version that the user approved.

@@ -99,7 +99,9 @@ Write:
 
 5. Each round
 
-1. Call get_project. Read the memory and the newest version.
+1. For a project that exists, call get_project. Read the memory and the newest version.
+   For a new project, search the memory with list_memory and query, and look at the user's product
+   first. The design skill says how.
 2. Make the mockups. Follow the design skill.
 3. Upload: with base and only the changed files, or with dir.
 4. Read the sheet and the warnings. Fix and upload again with version until it looks right.

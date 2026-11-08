@@ -26,6 +26,7 @@ type Server struct {
 	store  *Store
 	hub    *Hub
 	tokens *Tokens
+	shares *Shares
 	shots  *Shooter
 	thumbs *Thumbs
 	mux    *http.ServeMux
@@ -36,6 +37,7 @@ func NewServer(cfg Config) *Server {
 		cfg:    cfg,
 		store:  &Store{dir: cfg.Dir},
 		tokens: &Tokens{path: filepath.Join(cfg.Dir, "tokens")},
+		shares: &Shares{path: filepath.Join(cfg.Dir, "shares")},
 		mux:    http.NewServeMux(),
 	}
 	s.shots = NewShooter(cfg)
@@ -65,14 +67,16 @@ func (s *Server) routes() {
 	m.HandleFunc("GET /_shot/{id}", s.serveShot)
 	m.Handle("/mcp", s.tokens.Require(newMCPHandler(s)))
 	s.tokenRoutes()
+	s.shareRoutes()
 }
 
 // ServeHTTP adds no-cache to every response and checks basic auth.
 // /mcp has its own tokens. /health and the guides stay open, so that an agent can
-// check that moki runs and read the guide before it has the password.
+// check that moki runs and read the guide before it has the password. So do the
+// public links, and the moki page files they load.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
-	if s.cfg.Username != "" && !openPaths[r.URL.Path] && !s.authorized(r) {
+	if s.cfg.Username != "" && !isOpen(r.URL.Path) && !s.authorized(r) {
 		w.Header().Set("WWW-Authenticate", `Basic realm="moki"`)
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
@@ -94,7 +98,10 @@ func (s *Server) authorized(r *http.Request) bool {
 // serveVersion serves files of one version. Only paths of this shape are served,
 // so tokens, memory and .cache stay private. os.Root keeps symlinks inside the folder.
 func (s *Server) serveVersion(w http.ResponseWriter, r *http.Request) {
-	slug, ver, file := r.PathValue("slug"), r.PathValue("ver"), r.PathValue("file")
+	s.serveFiles(w, r, r.PathValue("slug"), r.PathValue("ver"), r.PathValue("file"))
+}
+
+func (s *Server) serveFiles(w http.ResponseWriter, r *http.Request, slug, ver, file string) {
 	if checkSlug(slug) != nil || checkVersion(ver) != nil {
 		http.NotFound(w, r)
 		return
@@ -123,30 +130,40 @@ func (s *Server) serveVersion(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, fi.Name(), fi.ModTime(), f)
 }
 
+// Share is the public link of a project, "" when it is private.
 type projectJSON struct {
 	Project
 	Thumb     string `json:"thumb"`
 	ThumbDark string `json:"thumb_dark"`
+	Share     string `json:"share,omitempty"`
 }
 
 func (s *Server) apiProjects(w http.ResponseWriter, r *http.Request) {
 	list := []projectJSON{}
+	shares := s.shares.All()
 	for _, p := range s.store.Projects() {
-		list = append(list, projectJSON{p, s.thumbs.URL(p.Slug, p.Version, false), s.thumbs.URL(p.Slug, p.Version, true)})
+		thumb, dark := s.thumbs.URL(p.Slug, p.Version, false), s.thumbs.URL(p.Slug, p.Version, true)
+		list = append(list, projectJSON{p, thumb, dark, sharePath(shares[p.Slug])})
 	}
 	writeJSON(w, r, list)
 }
 
 func (s *Server) apiProject(w http.ResponseWriter, r *http.Request) {
-	p, vers, err := s.store.Project(r.PathValue("slug"))
+	slug := r.PathValue("slug")
+	s.writeProject(w, r, slug, sharePath(s.shares.All()[slug]))
+}
+
+func (s *Server) writeProject(w http.ResponseWriter, r *http.Request, slug, share string) {
+	p, vers, err := s.store.Project(slug)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	writeJSON(w, r, struct {
 		Project
-		List []Version `json:"list"`
-	}{p, vers})
+		Share string    `json:"share,omitempty"`
+		List  []Version `json:"list"`
+	}{p, share, vers})
 }
 
 func (s *Server) serveThumb(w http.ResponseWriter, r *http.Request) {

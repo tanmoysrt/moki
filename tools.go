@@ -73,6 +73,7 @@ func (s *Server) addTools(srv *mcp.Server) {
 		"Get the files of a version, or of the whole project, as .tar.gz (up to 20 MB). "+
 			"With dir, write them into that folder on the moki machine instead.",
 		s.download)
+	addTool(s, srv, "share", shareDesc, s.share)
 	addTool(s, srv, "list_memory",
 		"List the memory files: slug, time and first line.",
 		s.listMemory)
@@ -112,9 +113,13 @@ func (s *Server) getProject(ctx context.Context, in slugIn) ([]mcp.Content, erro
 	}
 	out := struct {
 		Project
+		Share  string `json:"share,omitempty"` // the public link, when there is one
 		Memory string `json:"memory"`
 		List   []ver  `json:"list"`
 	}{Project: p, Memory: s.store.ReadMemory(in.Slug)}
+	if id := s.shares.All()[in.Slug]; id != "" {
+		out.Share = s.cfg.URL + sharePath(id)
+	}
 	for _, v := range vers {
 		out.List = append(out.List, ver{v, s.store.Files(in.Slug, v.Name), s.viewerURL(in.Slug, v.Name)})
 	}

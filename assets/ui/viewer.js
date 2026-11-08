@@ -1,5 +1,6 @@
 // Version viewer. moki shows the version index.html as the agent made it, in a same-origin
-// iframe. moki adds only the bar: back, title, versions, theme and open in a new tab.
+// iframe. moki adds only the bar: back, title, versions, padlock, theme and open in a new tab.
+// On a public link the logo takes the place of back, so a visitor sees only this project.
 
 function viewer() {
   return `<div class="viewer">
@@ -11,15 +12,49 @@ function viewer() {
 
 function viewerBar() {
   const { slug, ver } = app.route
-  const { title, list } = app.detail[slug]
-  return `<a class="ib" href="#/" aria-label="Back" title="Back (Esc)">${icon('back')}</a>
+  const { title, list, share: link } = app.detail[slug]
+  return `${share ? `<span class="mark">${LOGO}</span>` : `<a class="ib" href="#/" aria-label="Back" title="Back (Esc)">${icon('back')}</a>`}
     <div class="vtitle trunc">${esc(title || slug)}</div>
     ${list.length > 1 ? `<div class="vers num">${list.slice().reverse().map(pill).join('')}</div>` : ''}
     <div class="sp"></div>
+    ${link ? padlock(link) : ''}
     ${themeButton()}
     <a class="ib" href="${pageURL(slug, ver)}" target="_blank" aria-label="Open in a new tab" title="Open in a new tab">
       ${icon('ext')}
     </a>`
+}
+
+// padlock shows on a public project, with a card that has the link. It changes nothing:
+// only an agent makes a project public or private.
+function padlock(path) {
+  const url = esc(location.origin + path)
+  const card = `<div class="pop">
+      <b>Public</b>
+      <p>Anyone with this link can see every version. No password.</p>
+      <div class="link">
+        <span class="trunc">${url}</span>
+        <button class="ib" data-copy="${url}" aria-label="Copy link" title="Copy link">${icon('copy')}</button>
+      </div>
+      <small>To make it private, ask your agent.</small>
+    </div>`
+  return `<button class="ib${app.linkOpen ? ' on' : ''}" data-act="link" aria-label="Public link" title="${PUBLIC}">
+      ${icon('unlock')}
+    </button>
+    ${app.linkOpen ? card : ''}`
+}
+
+function toggleLink() {
+  app.linkOpen = !app.linkOpen
+  document.querySelector('.vbar').innerHTML = viewerBar()
+}
+
+// showLinkOff tells a visitor that the project of the link went private.
+function showLinkOff() {
+  document.title = 'moki'
+  document.body.innerHTML = `<main class="gone">
+    <h1>This link is off</h1>
+    <p>The project is private now. Ask whoever sent it for a new link.</p>
+  </main>`
 }
 
 function pill(v) {

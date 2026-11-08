@@ -40,6 +40,7 @@ Rules
   upload(slug, files | dir, ...)      make a version
   screenshot(slug, ...)               see your work
   download_project(slug, version?)    get the files back
+  share(slug, public)                 a link with no password. Only when the user asks
   list_memory, read_memory(slug), write_memory(slug, content, append?)
 
 upload:

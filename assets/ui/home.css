@@ -112,20 +112,38 @@
   opacity: 1;
 }
 
-.vtag {
+.vtag,
+.ptag {
   position: absolute;
   z-index: 1;
-  left: 8px;
   bottom: 8px;
   height: 22px;
-  padding: 0 8px;
   border-radius: 7px;
   background: rgba(10, 10, 10, 0.72);
   backdrop-filter: blur(6px);
   color: #fff;
+}
+
+.vtag {
+  left: 8px;
+  padding: 0 8px;
   font-size: 12px;
   line-height: 22px;
   font-weight: 500;
+}
+
+/* a public project */
+.ptag {
+  right: 8px;
+  width: 22px;
+  display: grid;
+  place-items: center;
+}
+
+.ptag svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2;
 }
 
 /* ---------- first run ---------- */

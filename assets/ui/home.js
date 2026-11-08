@@ -40,12 +40,17 @@ function home() {
 
 function tile(p) {
   return `<a class="card tile" href="${viewerHash(p.slug, p.version)}" data-slug="${esc(p.slug)}">
-    <div class="thumb">${thumbHTML(p)}${versionTag(p)}</div>
+    <div class="thumb">${thumbHTML(p)}${tags(p)}</div>
     <div class="meta">${tileMeta(p)}</div>
   </a>`
 }
 
-const versionTag = (p) => (p.versions > 1 ? `<span class="vtag num">${p.version}</span>` : '')
+// tags sit on the picture: the version on the left, an open padlock on the right when public.
+const tags = (p) =>
+  (p.versions > 1 ? `<span class="vtag num">${p.version}</span>` : '') +
+  (p.share ? `<span class="ptag" title="${PUBLIC}">${icon('unlock')}</span>` : '')
+
+const PUBLIC = 'Public. Anyone with the link can see it.'
 
 function tileMeta(p) {
   return `<div class="title">
@@ -60,8 +65,8 @@ function updateTile(el, p) {
   el.href = viewerHash(p.slug, p.version)
   el.querySelector('.meta').innerHTML = tileMeta(p)
   const box = el.querySelector('.thumb')
-  box.querySelector('.vtag')?.remove()
-  box.insertAdjacentHTML('beforeend', versionTag(p))
+  box.querySelectorAll('.vtag, .ptag').forEach((el) => el.remove())
+  box.insertAdjacentHTML('beforeend', tags(p))
   setThumb(box, p)
 }
 
@@ -123,7 +128,7 @@ function thumbKey(p) {
 function setThumb(box, p) {
   const newest = [...box.querySelectorAll('[data-key]')].pop()
   if (newest?.dataset.key === thumbKey(p)) return
-  box.insertBefore(htmlElement(thumbHTML(p)), box.querySelector('.vtag')) // the tag stays on top
+  box.insertBefore(htmlElement(thumbHTML(p)), box.querySelector('.vtag, .ptag')) // the tags stay on top
 }
 
 // showThumb fades a loaded thumbnail in and removes the ones under it.

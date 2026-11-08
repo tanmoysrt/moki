@@ -135,7 +135,7 @@ func (a *Activity) Call(agent, tool, note string, took time.Duration, err error)
 	switch {
 	case err != nil:
 		name, note = red(name), red(short(err.Error()))
-	case tool == "upload" || tool == "write_memory":
+	case tool == "upload" || tool == "write_memory" || tool == "share":
 		name = green(name)
 	case tool == "screenshot":
 		name = cyan(name)

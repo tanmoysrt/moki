@@ -12,7 +12,7 @@ import (
 
 // Event goes to every client on /api/events.
 // "change": a version is new, changed or gone. "thumb": its thumbnail is ready.
-// "agent": an agent used its token for the first time.
+// "agent": an agent used its token for the first time. "share": a project went public or private.
 type Event struct {
 	Type    string `json:"-"`
 	Slug    string `json:"slug"`

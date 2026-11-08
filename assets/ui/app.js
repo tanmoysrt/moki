@@ -1,6 +1,10 @@
 // moki UI: one state object, hash routes, one render, event delegation.
 // Routes: #/ is the projects home, #/p/<slug>/<version> is the viewer.
 // Data comes from /api/projects and /api/projects/<slug>. /api/events says when a version changes.
+// A public link, /s/<id>/#/<version>, shows only the viewer of one project, from /s/<id>/api,
+// with no password and no live updates.
+
+const share = location.pathname.match(/^\/s\/([a-z2-7]+)\//)?.[1] || ''
 
 const app = {
   dark: document.documentElement.classList.contains('dark'),
@@ -11,11 +15,13 @@ const app = {
   route: { name: 'home' },
   query: '',
   dialog: false,
+  linkOpen: false, // the card of the viewer padlock
   down: false, // moki does not answer
   homeScroll: 0,
 }
 
 async function start() {
+  if (share) return route()
   try {
     await Promise.all([loadProjects(), loadAgent()])
   } catch (e) {
@@ -29,7 +35,9 @@ async function start() {
 // ---------- routes and render ----------
 
 function parseRoute() {
-  const [, kind, slug, ver = ''] = location.hash.split('/')
+  const parts = location.hash.split('/')
+  if (share) return { name: 'view', slug: share, ver: parts[1] || '' }
+  const [, kind, slug, ver = ''] = parts
   return kind === 'p' && slug ? { name: 'view', slug, ver } : { name: 'home' }
 }
 
@@ -38,6 +46,7 @@ async function route() {
   const next = parseRoute()
   if (prev.name === 'home' && next.name === 'view') app.homeScroll = scrollY
   app.route = next
+  if (next.slug !== prev.slug) app.linkOpen = false
 
   if (next.name === 'view' && !app.down) {
     let detail
@@ -47,7 +56,7 @@ async function route() {
       return setDown()
     }
     if (app.route !== next) return // the user went on while it loaded
-    if (!detail?.list.length) return location.replace('#/')
+    if (!detail?.list.length) return share ? showLinkOff() : location.replace('#/')
     if (!detail.list.some((v) => v.version === next.ver)) {
       return location.replace(viewerHash(next.slug, detail.list[0].version))
     }
@@ -59,7 +68,7 @@ async function route() {
 
 function render() {
   const viewing = app.route.name === 'view' && !app.down
-  if (app.down) document.body.innerHTML = topBar() + downNote()
+  if (app.down) document.body.innerHTML = (share ? '' : topBar()) + downNote()
   else if (viewing) document.body.innerHTML = viewer()
   else document.body.innerHTML = topBar() + home()
   if (app.dialog) document.body.insertAdjacentHTML('beforeend', connectDialog())
@@ -70,7 +79,8 @@ function render() {
   scrollTo(0, app.homeScroll)
 }
 
-const downNote = () => '<main class="wrap"><p class="none">moki does not answer. This page updates when moki is back.</p></main>'
+const downNote = () =>
+  `<main class="wrap"><p class="none">moki does not answer. ${share ? 'Try again later.' : 'This page updates when moki is back.'}</p></main>`
 
 // ---------- data ----------
 
@@ -92,7 +102,7 @@ async function loadAgent() {
 
 async function loadProject(slug, reload = false) {
   if (app.detail[slug] && !reload) return app.detail[slug]
-  const p = await getJSON(`/api/projects/${encodeURIComponent(slug)}`)
+  const p = await getJSON(share ? `/s/${share}/api` : `/api/projects/${encodeURIComponent(slug)}`)
   if (!p) {
     delete app.detail[slug]
     return null
@@ -103,12 +113,13 @@ async function loadProject(slug, reload = false) {
 
 const project = (slug) => app.projects.find((p) => p.slug === slug)
 const versionNumber = (ver) => Number(ver.slice(1))
-const pageURL = (slug, ver) => `/p/${slug}/${ver}/index.html`
-const viewerHash = (slug, ver) => `#/p/${slug}/${ver}`
+const pageURL = (slug, ver) => (share ? `/s/${share}/${ver}/index.html` : `/p/${slug}/${ver}/index.html`)
+const viewerHash = (slug, ver) => (share ? `#/${ver}` : `#/p/${slug}/${ver}`)
 
 // ---------- live update ----------
-// The server sends "change" when a version is new, changed or gone, and "thumb" when its
-// thumbnail is ready. EventSource reconnects by itself when moki restarts.
+// The server sends "change" when a version is new, changed or gone, "thumb" when its
+// thumbnail is ready, and "share" when a project goes public or private.
+// EventSource reconnects by itself when moki restarts.
 
 function listen() {
   const events = new EventSource('/api/events')
@@ -126,6 +137,7 @@ function listen() {
   events.addEventListener('change', (e) => queueRefresh(JSON.parse(e.data)))
   events.addEventListener('thumb', () => queueRefresh())
   events.addEventListener('agent', () => queueRefresh())
+  events.addEventListener('share', (e) => queueRefresh(JSON.parse(e.data)))
 }
 
 let queued = []
@@ -183,6 +195,7 @@ const actions = {
   theme: toggleTheme,
   connect: openConnect,
   close: closeConnect,
+  link: toggleLink,
 }
 
 async function copy(button) {
@@ -207,6 +220,7 @@ function copyWithSelection(text) {
 }
 
 document.addEventListener('click', (e) => {
+  if (app.linkOpen && !e.target.closest('.pop, [data-act="link"]')) toggleLink() // a click outside the card
   const target = e.target.closest('[data-act], [data-ver], [data-step], [data-copy]')
   if (!target) return
   if (target.classList.contains('scrim') && e.target !== target) return // a click inside the dialog
@@ -226,8 +240,9 @@ document.addEventListener('keydown', (e) => {
   const typing = e.target instanceof Element && e.target.matches('input, textarea, select')
   if (e.key === 'Escape') {
     if (app.dialog) return actions.close()
+    if (app.linkOpen) return toggleLink()
     if (typing) return e.target.blur()
-    if (app.route.name === 'view') location.hash = '#/'
+    if (app.route.name === 'view' && !share) location.hash = '#/'
     return
   }
   if (typing || e.metaKey || e.ctrlKey || e.altKey) return

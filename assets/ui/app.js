@@ -16,6 +16,8 @@ const app = {
   query: '',
   dialog: false,
   linkOpen: false, // the card of the viewer padlock
+  linkFade: false, // the card fades in when it opens, not on each render
+  sharing: false, // the public switch waits for moki
   down: false, // moki does not answer
   homeScroll: 0,
 }
@@ -196,6 +198,7 @@ const actions = {
   connect: openConnect,
   close: closeConnect,
   link: toggleLink,
+  public: togglePublic,
 }
 
 async function copy(button) {

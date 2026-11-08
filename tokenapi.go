@@ -44,13 +44,21 @@ func (s *Server) apiMakeToken(w http.ResponseWriter, r *http.Request) {
 // canChange checks a request that makes or revokes a token. It must come from a
 // moki page: a page on another site cannot send it, even with the password cached.
 func (s *Server) canChange(w http.ResponseWriter, r *http.Request) bool {
-	origin, err := url.Parse(r.Header.Get("Origin"))
-	if err != nil || origin.Host != r.Host {
-		http.Error(w, "tokens can be changed only from moki itself", http.StatusForbidden)
+	if !sameOrigin(w, r) {
 		return false
 	}
 	if !s.canManage(r) {
 		http.Error(w, `make tokens with "moki token register" on the moki machine, or set MOKI_USERNAME and MOKI_PASSWORD`, http.StatusForbidden)
+		return false
+	}
+	return true
+}
+
+// sameOrigin checks that a request that changes something comes from a moki page.
+func sameOrigin(w http.ResponseWriter, r *http.Request) bool {
+	origin, err := url.Parse(r.Header.Get("Origin"))
+	if err != nil || origin.Host != r.Host {
+		http.Error(w, "this can be changed only from moki itself", http.StatusForbidden)
 		return false
 	}
 	return true

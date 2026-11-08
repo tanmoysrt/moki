@@ -21,8 +21,10 @@
   gap: 20px;
 }
 
+/* min-width: 0 lets a card shrink, so a long title or note cuts off instead of widening the page */
 .tile {
   display: block;
+  min-width: 0;
   padding: 8px;
   transition: transform 0.15s, box-shadow 0.15s;
 }

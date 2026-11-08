@@ -41,10 +41,15 @@ Rules
   screenshot(slug, ...)               see your work
   download_project(slug, version?)    get the files back
   share(slug, public)                 a link with no password. Only when the user asks
-  list_memory, read_memory(slug), write_memory(slug, content, append?)
+  list_memory(query?)                 the memory files, or a search of every memory
+  read_memory(slug), write_memory(slug, content, append?)
 
 upload:
 - files: [{path, content}]. Add base64: true for images and fonts.
+- Images: upload them with the mockup and use a relative path, for example img/logo.png.
+  Never point an image at localhost, 127.0.0.1, 0.0.0.0 or another local address, for example a dev
+  server. The user can open moki on another machine or with a public link, and then the image breaks.
+  To use an image from a local app, save it to a file and upload it.
 - dir: a folder on the moki machine. Use this when you run on the same machine: write the files to disk,
   then upload the folder in one call.
 - base: "v2" starts from v2. Then send only the files that changed. delete: ["old.html"] removes files.
@@ -62,7 +67,37 @@ screenshot:
 - One call takes up to 48 shots. They come back on one labeled sheet. sheet: false returns them one by one.
 
 
-4. Each round
+4. Memory
+
+A new chat does not know the earlier rounds. The memory tells it. Each project has one markdown file,
+~/.moki/memory/<slug>.md. moki only stores it. You write it and you read it.
+
+Read:
+- get_project returns the memory with the versions. read_memory(slug) returns only the memory.
+- list_memory shows the first line of each file. Use it to find the project when the user does not
+  give a slug.
+- list_memory with query searches every memory. It returns each line that has all the words, with its
+  "## vN" heading and the lines next to it. Before you start a new project, search for the same kind
+  of screen or part, for example "table" or "sidebar", and follow what the user decided before.
+  When a search finds nothing, try other words.
+- Read the memory before each round and follow it. Do not bring back an option that the user rejected.
+- When the user asks you to build the approved mockup, the memory tells you which version.
+  Get its files with download_project.
+
+Write:
+- Call write_memory with append: true after each round. Start the entry with the version, "## v3".
+- Make the first line of the file a one-line summary of the project.
+- Write what the next chat needs: the brief, the feedback in the user's words, the decisions and why,
+  the options that the user rejected, the approved version, the source of the data, open questions.
+- Keep it short. Do not copy the HTML or what get_project already shows. Use the words that a later
+  search will look for: the names of screens and parts.
+- When the memory gets long, write_memory says so. Then make it shorter.
+- Without append, write_memory replaces the file. Use it only to make a long memory shorter. Read it
+  first, and keep each decision.
+- Never write tokens, passwords or other secrets.
+
+
+5. Each round
 
 1. Call get_project. Read the memory and the newest version.
 2. Make the mockups. Follow the design skill.

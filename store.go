@@ -112,55 +112,6 @@ func (s *Store) NextVersion(slug string) string {
 	return "v" + strconv.Itoa(versionNum(vers[len(vers)-1].Name)+1)
 }
 
-func (s *Store) memoryPath(slug string) string {
-	return filepath.Join(s.dir, "memory", slug+".md")
-}
-
-func (s *Store) ReadMemory(slug string) string {
-	b, _ := os.ReadFile(s.memoryPath(slug))
-	return string(b)
-}
-
-func (s *Store) WriteMemory(slug, content string, add bool) error {
-	if err := os.MkdirAll(filepath.Join(s.dir, "memory"), 0o755); err != nil {
-		return err
-	}
-	if add {
-		if old := s.ReadMemory(slug); old != "" && !strings.HasSuffix(old, "\n") {
-			content = "\n" + content
-		}
-		f, err := os.OpenFile(s.memoryPath(slug), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		_, err = f.WriteString(content)
-		return err
-	}
-	return os.WriteFile(s.memoryPath(slug), []byte(content), 0o644)
-}
-
-type MemoryInfo struct {
-	Slug  string    `json:"slug"`
-	Time  time.Time `json:"time"`
-	First string    `json:"first_line"`
-}
-
-func (s *Store) ListMemory() []MemoryInfo {
-	entries, _ := os.ReadDir(filepath.Join(s.dir, "memory"))
-	list := []MemoryInfo{}
-	for _, e := range entries {
-		slug, ok := strings.CutSuffix(e.Name(), ".md")
-		if !ok || e.IsDir() {
-			continue
-		}
-		info, _ := e.Info()
-		first, _, _ := strings.Cut(strings.TrimSpace(s.ReadMemory(slug)), "\n")
-		list = append(list, MemoryInfo{Slug: slug, Time: info.ModTime(), First: first})
-	}
-	return list
-}
-
 func checkSlug(slug string) error {
 	if !slugRe.MatchString(slug) {
 		return fmt.Errorf(`slug %q is not valid. Use lowercase letters, digits and "-", for example "my-app"`, slug)

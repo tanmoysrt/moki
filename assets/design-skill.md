@@ -77,7 +77,8 @@ window.BOARD = {
 
 - Make the data look real: names, usernames, numbers, dates, avatars. Use the data of the user's product when you can get it.
 - Never use lorem ipsum.
-- Generated avatars, inline SVG and images from other hosts are all fine.
+- Generated avatars, inline SVG and images from public hosts are all fine.
+- Never point an image at localhost, 127.0.0.1 or another local address. It breaks when the user opens moki on another machine or with a public link. Upload the image with the mockup and use a relative path, for example `img/logo.png`.
 - Say in the intro which data is real and which is made up.
 
 ## Check your work
@@ -93,7 +94,9 @@ window.BOARD = {
 
 ## Rounds
 
+- Read the memory before each round. It has the brief and the decisions of earlier chats.
+- Before a new project, search the memory of other projects with `list_memory` and `query`, for example "table". Follow the taste that the user showed there.
 - Each round of feedback is a new version.
 - Keep the options that the user liked. Drop the ones the user rejected.
 - Do not change a version that the user approved.
-- Write the decisions to memory with `write_memory` and `append: true`.
+- Write the decisions to memory with `write_memory` and `append: true`: the feedback, what you kept, what the user rejected, and the approved version. The guide has more on memory.

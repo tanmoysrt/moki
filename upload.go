@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -56,6 +57,9 @@ func (s *Server) upload(ctx context.Context, in uploadIn) ([]mcp.Content, error)
 
 	files := s.store.Files(in.Slug, ver)
 	warns := s.pageWarnings(in.Slug, ver, files)
+	if strings.TrimSpace(s.store.ReadMemory(in.Slug)) == "" {
+		warns = append(warns, "the project has no memory yet. Call write_memory with the brief and the decisions of this round")
+	}
 	var images [][]byte
 	if (in.Check == nil || *in.Check) && hasFile(files, "index.html") {
 		run, err := s.run(ctx, s.checkShots(in.Slug, ver), true)
@@ -220,6 +224,10 @@ func (s *Server) pageWarnings(slug, ver string, files []string) []string {
 	}
 	var out []string
 	for _, f := range files {
+		if hasLocalURL(filepath.Join(s.store.VersionDir(slug, ver), f)) {
+			out = append(out, f+": a URL points at localhost or 127.0.0.1. It breaks on other machines and public links. "+
+				"Upload the file with the mockup and use a relative path")
+		}
 		if !strings.HasSuffix(f, ".html") {
 			continue
 		}
@@ -232,4 +240,17 @@ func (s *Server) pageWarnings(slug, ver string, files []string) []string {
 		}
 	}
 	return out
+}
+
+// localRe finds URLs to this machine, such as a dev server, in pages, styles and scripts.
+var localRe = regexp.MustCompile(`(?i)\bhttps?://(localhost|127\.\d+\.\d+\.\d+|0\.0\.0\.0|\[::1\])\b`)
+
+func hasLocalURL(path string) bool {
+	switch filepath.Ext(path) {
+	case ".html", ".css", ".js":
+	default:
+		return false
+	}
+	b, _ := os.ReadFile(path)
+	return localRe.Match(b)
 }

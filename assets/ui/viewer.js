@@ -17,31 +17,33 @@ function viewerBar() {
     <div class="vtitle trunc">${esc(title || slug)}</div>
     ${list.length > 1 ? `<div class="vers num">${list.slice().reverse().map(pill).join('')}</div>` : ''}
     <div class="sp"></div>
-    ${link ? padlock(link) : ''}
+    ${share ? '' : padlock(slug, link)}
     ${themeButton()}
     <a class="ib" href="${pageURL(slug, ver)}" target="_blank" aria-label="Open in a new tab" title="Open in a new tab">
       ${icon('ext')}
     </a>`
 }
 
-// padlock shows on a public project, with a card that has the link. It changes nothing:
-// only an agent makes a project public or private.
-function padlock(path) {
-  const url = esc(location.origin + path)
+// padlock says if the project is public. Its card has the link, or what to ask an agent
+// for one. It changes nothing: only an agent makes a project public or private.
+function padlock(slug, path) {
+  const open = Boolean(path)
+  const text = open ? location.origin + path : `Make ${slug} public in moki`
   const card = `<div class="pop">
-      <b>Public</b>
-      <p>Anyone with this link can see every version. No password.</p>
+      <b>${open ? 'Public' : 'Private'}</b>
+      <p>${open ? 'Anyone with this link can see every version. No password.' : `${PRIVATE} To share a link, ask your agent:`}</p>
       <div class="link">
-        <span class="trunc">${url}</span>
-        <button class="ib" data-copy="${url}" aria-label="Copy link" title="Copy link">${icon('copy')}</button>
+        <span class="trunc">${esc(text)}</span>
+        <button class="ib" data-copy="${esc(text)}" aria-label="Copy" title="Copy">${icon('copy')}</button>
       </div>
-      <small>To make it private, ask your agent.</small>
+      ${open ? '<small>To make it private, ask your agent.</small>' : ''}
     </div>`
-  return `<button class="ib${app.linkOpen ? ' on' : ''}" data-act="link" aria-label="Public link" title="${PUBLIC}">
-      ${icon('unlock')}
-    </button>
+  return `<button class="ib${app.linkOpen ? ' on' : ''}" data-act="link" aria-label="${open ? 'Public' : 'Private'}"
+      title="${open ? PUBLIC : PRIVATE}">${icon(open ? 'unlock' : 'lock')}</button>
     ${app.linkOpen ? card : ''}`
 }
+
+const PRIVATE = 'Only people who can open moki can see it.'
 
 function toggleLink() {
   app.linkOpen = !app.linkOpen

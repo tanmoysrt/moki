@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>moki</title>
+    <link rel="icon" href="/ui/icon.svg">
+    <link rel="stylesheet" href="/ui/base.css">
+    <link rel="stylesheet" href="/ui/home.css">
+    <link rel="stylesheet" href="/ui/connect.css">
+    <link rel="stylesheet" href="/ui/viewer.css">
+    <script>
+      // Set the theme before the first paint, so a dark page does not flash light.
+      // Order: ?dark=1 or ?dark=0, then the moki theme in localStorage, then the system theme.
+      ;(() => {
+        const query = new URLSearchParams(location.search).get('dark')
+        let saved = null
+        try {
+          saved = localStorage.getItem('moki-theme')
+        } catch (e) {}
+        const dark = query ? query === '1' : saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.classList.toggle('dark', dark)
+      })()
+    </script>
+  </head>
+  <body>
+    <script src="/ui/icons.js"></script>
+    <script src="/ui/home.js"></script>
+    <script src="/ui/connect.js"></script>
+    <script src="/ui/viewer.js"></script>
+    <script src="/ui/theme.js"></script>
+    <script src="/ui/app.js"></script>
+  </body>
+</html>

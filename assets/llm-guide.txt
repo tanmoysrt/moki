@@ -1,0 +1,74 @@
+moki: guide for agents
+
+moki is a local viewer for UI mockups. You write plain HTML, CSS and JS. The user opens it in the browser.
+moki does not decide how a mockup looks. You decide. moki stores, serves, screenshots and remembers.
+
+URL in this guide: http://127.0.0.1:9999. If the user gave you another moki URL, use that one.
+
+
+Rules
+
+- Mockup first. Before you change UI, refactor a screen or a flow, or design a new page or feature,
+  make a mockup in moki and get the user's OK. Write the real code only after that. This is not optional.
+- At the start of each chat, before your first mockup, read this guide and the design skill:
+    http://127.0.0.1:9999/llm-guide.txt
+    http://127.0.0.1:9999/design-skill.txt
+  Do not work from what you remember of an earlier chat.
+
+
+{{setup}}
+
+
+2. How moki stores work
+
+  ~/.moki/<slug>/v1/index.html     one folder per version
+  ~/.moki/<slug>/v2/index.html
+  ~/.moki/memory/<slug>.md         what you remember about the project
+
+- A slug is lowercase letters, digits and "-". For example: team-page.
+- A version is one round of ideas. It can hold as many mockups as you want.
+- index.html is the page the user sees first. Add any other files: pages, css, js, images, fonts.
+- Do not add a light/dark toggle. The moki bar has one. Style dark mode with the dark class on <html>.
+- The <title> of index.html is the project title. <meta name="description"> is the note for the version:
+  say what is new in this round.
+
+
+3. Tools
+
+  list_projects                       all projects
+  get_project(slug)                   versions, files and memory: call it before you work on a project
+  upload(slug, files | dir, ...)      make a version
+  screenshot(slug, ...)               see your work
+  download_project(slug, version?)    get the files back
+  list_memory, read_memory(slug), write_memory(slug, content, append?)
+
+upload:
+- files: [{path, content}]. Add base64: true for images and fonts.
+- dir: a folder on the moki machine. Use this when you run on the same machine: write the files to disk,
+  then upload the folder in one call.
+- base: "v2" starts from v2. Then send only the files that changed. delete: ["old.html"] removes files.
+- version: "v2" replaces v2 for a small fix. Without it, moki makes the next version.
+- The reply has the viewer URL, warnings, and a desktop and phone sheet of index.html. Read them and fix
+  what is wrong. check: false skips the sheet.
+
+screenshot:
+- versions: "v3", ["v2", "v3"] or "all". Default: the newest.
+- pages: ["index.html", "b.html"] or "all".
+- sizes: desktop, laptop, tablet, phone, phone-landscape, or "WxH". Default: desktop and phone.
+- themes: "light", "dark" or "both". Default: light.
+- full: true takes the whole page, also when an inner element scrolls.
+- selector: one element, for example "#option-b".
+- One call takes up to 48 shots. They come back on one labeled sheet. sheet: false returns them one by one.
+
+
+4. Each round
+
+1. Call get_project. Read the memory and the newest version.
+2. Make the mockups. Follow the design skill.
+3. Upload: with base and only the changed files, or with dir.
+4. Read the sheet and the warnings. Fix and upload again with version until it looks right.
+5. Call screenshot with themes: "both". Add full: true for long pages.
+6. Call write_memory with append: true. Write the brief, the decisions and the feedback of this round.
+7. Send the user the viewer URL and a short list of what is new. Recommend one option.
+
+When the user gives feedback, start the next version. Do not change a version that the user approved.

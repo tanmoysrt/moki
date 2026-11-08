@@ -1,0 +1,184 @@
+/* Version viewer. */
+
+.viewer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.vbar {
+  position: relative;
+  z-index: 2;
+  height: 44px;
+  flex: none;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.vbar .ib {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.vtitle {
+  flex: 0 1 auto;
+  margin: 0 6px 0 2px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--hi);
+}
+
+/* version pills; many versions scroll sideways */
+.vers {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 2px;
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-radius: 9px;
+  background: var(--accented);
+}
+
+.vers::-webkit-scrollbar {
+  display: none;
+}
+
+.vers button {
+  position: relative;
+  flex: none;
+  height: 26px;
+  min-width: 30px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.vers button:hover {
+  color: var(--hi);
+}
+
+.vers button.on {
+  background: var(--card);
+  box-shadow: var(--xs);
+  color: var(--hi);
+}
+
+/* a version that arrived while the user looks at an older one */
+.vers button.new::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--live);
+  box-shadow: 0 0 0 2px var(--accented);
+}
+
+/* The page fills the canvas. A new page loads on top, hidden, and fades in when it is ready. */
+.canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--canvas);
+}
+
+.canvas > iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--page);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.canvas > iframe.ready {
+  opacity: 1;
+}
+
+.canvas > .incoming {
+  z-index: 1;
+}
+
+/* the phone stepper; shown below 640px */
+.stepper {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .vbar {
+    gap: 4px;
+  }
+
+  .vers {
+    display: none;
+  }
+
+  .stepper {
+    position: fixed;
+    z-index: 3;
+    left: 50%;
+    bottom: 20px;
+    height: 44px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border-radius: 22px;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--pop);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    transform: translateX(-50%);
+  }
+
+  .stepper:empty {
+    display: none;
+  }
+
+  .stepper .ib {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    color: #fff;
+  }
+
+  .stepper .ib:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .stepper .ib:disabled {
+    opacity: 0.35;
+    background: none;
+    cursor: default;
+  }
+
+  .stepper span {
+    padding: 0 6px;
+    white-space: nowrap;
+  }
+
+  .stepper .dot {
+    width: 6px;
+    height: 6px;
+    margin: 0 6px 0 -2px;
+    border-radius: 50%;
+    background: var(--live);
+  }
+}

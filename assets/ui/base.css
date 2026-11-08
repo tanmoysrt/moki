@@ -1,0 +1,287 @@
+/* moki UI base: tokens, elements, buttons, top bar and motion.
+   One theme for moki and the mockup inside it: the `dark` class on <html>. */
+
+@font-face {
+  font-family: Inter;
+  src: url(/kit/inter.woff2) format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  /* surfaces */
+  --page: #f4f5f7;
+  --card: #fff;
+  --accented: #eef0f3;
+  --canvas: #e9ebef;
+  --code: #f7f8fa;
+  --border: #e2e5ea;
+  --scrim: rgba(15, 23, 42, 0.35);
+
+  /* text */
+  --text: #404040;
+  --hi: #171717;
+  --muted: #5f6672;
+  --dim: #8a909b;
+
+  /* accents */
+  --live: #2563eb;
+  --danger: #dc2626;
+
+  /* shadows */
+  --xs: 0 1px 2px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.04);
+  --lift: 0 8px 24px rgba(15, 23, 42, 0.1), 0 0 0 1px rgba(15, 23, 42, 0.04);
+  --pop: 0 20px 50px rgba(15, 23, 42, 0.2);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --page: #0a0a0a;
+  --card: #161616;
+  --accented: #222;
+  --canvas: #111;
+  --code: #0f0f0f;
+  --border: #262626;
+  --scrim: rgba(0, 0, 0, 0.6);
+
+  --text: #e5e5e5;
+  --hi: #fff;
+  --muted: #b4b4b4;
+  --dim: #7c7c7c;
+
+  --live: #3b82f6;
+  --danger: #ef4444;
+
+  --xs: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --lift: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --pop: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- base ---------- */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font: 14px/20px Inter, system-ui, sans-serif;
+  color: var(--text);
+  background: var(--page);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+code,
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.trunc {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp {
+  flex: 1;
+}
+
+svg.i {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--xs);
+  color: var(--hi);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.btn.primary {
+  background: var(--hi);
+  box-shadow: none;
+  color: var(--card);
+}
+
+/* icon button */
+.ib {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--muted);
+}
+
+.ib:hover {
+  background: var(--accented);
+  color: var(--hi);
+}
+
+.ib:focus-visible,
+.btn:focus-visible,
+.vers button:focus-visible,
+.tile:focus-visible {
+  outline: 2px solid var(--hi);
+  outline-offset: 2px;
+}
+
+.card {
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--xs);
+}
+
+/* ---------- top bar ---------- */
+
+.top {
+  height: 56px;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--hi);
+}
+
+.brand svg {
+  width: 24px;
+  height: 24px;
+}
+
+.search {
+  width: 300px;
+  height: 36px;
+  margin-left: 24px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--xs);
+  color: var(--dim);
+}
+
+.search:focus-within {
+  box-shadow: 0 0 0 2px var(--hi);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  font: inherit;
+  color: var(--hi);
+}
+
+.search input::placeholder {
+  color: var(--dim);
+}
+
+.search kbd {
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font: 11px Inter, system-ui, sans-serif;
+  color: var(--dim);
+}
+
+/* ---------- motion: fades and small moves, nothing that changes size ---------- */
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .top {
+    padding: 0 16px;
+    gap: 8px;
+  }
+
+  .search,
+  .btn .label {
+    display: none;
+  }
+
+  .btn.connect {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+}

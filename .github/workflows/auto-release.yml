@@ -1,0 +1,71 @@
+# Releases moki once a day when develop has new commits since the last v* tag.
+# The version starts at v1.0.0. Each release bumps the patch, and a breaking change
+# ("feat!:", "fix(api)!:" or a "BREAKING CHANGE:" footer) bumps the minor.
+# It calls the release and docker workflows itself: a tag pushed with the workflow
+# token does not start other workflows.
+name: auto-release
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency: auto-release
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: next
+        name: Pick the next version
+        run: |
+          last=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
+          if [ -z "$last" ]; then
+            tag=v1.0.0
+          elif [ "$(git rev-list --count "$last..HEAD")" = 0 ]; then
+            echo "No commits since $last. Nothing to release."
+            exit 0
+          else
+            IFS=. read -r major minor patch <<< "${last#v}"
+            if git log "$last..HEAD" --format='%s%n%b' | grep -qE '^[a-z]+(\([^)]*\))?!:|^BREAKING[ -]CHANGE:'; then
+              tag="v$major.$((minor + 1)).0"
+            else
+              tag="v$major.$minor.$((patch + 1))"
+            fi
+          fi
+          echo "Releasing $tag (last: ${last:-none})"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Tag
+        if: steps.next.outputs.tag != ''
+        env:
+          TAG: ${{ steps.next.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+
+  release:
+    needs: version
+    if: needs.version.outputs.tag != ''
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.version.outputs.tag }}
+
+  docker:
+    needs: version
+    if: needs.version.outputs.tag != ''
+    uses: ./.github/workflows/docker.yml
+    with:
+      tag: ${{ needs.version.outputs.tag }}

@@ -1,10 +1,15 @@
 # Builds moki for six platforms on a v* tag and puts the binaries and
-# checksums.txt on the GitHub release.
+# checksums.txt on the GitHub release. auto-release calls it with the tag it made.
 name: release
 
 on:
   push:
     tags: ["v*"]
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
 
 permissions:
   contents: write
@@ -12,8 +17,12 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-go@v5
         with:
@@ -30,7 +39,7 @@ jobs:
             ext=""
             if [ "$os" = windows ]; then ext=".exe"; fi
             GOOS=$os GOARCH=$arch go build -trimpath \
-              -ldflags "-s -w -X main.version=${GITHUB_REF_NAME}" \
+              -ldflags "-s -w -X main.version=${TAG}" \
               -o "dist/moki-${os}-${arch}${ext}" .
           done
           cd dist && sha256sum moki-* > checksums.txt
@@ -38,4 +47,4 @@ jobs:
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$TAG" dist/* --title "$TAG" --generate-notes

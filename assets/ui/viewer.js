@@ -24,20 +24,24 @@ function viewerBar() {
     </a>`
 }
 
-// padlock says if the project is public. Its card has the link, or what to ask an agent
-// for one. It changes nothing: only an agent makes a project public or private.
+// padlock says if the project is public. Its card has a switch that turns the public
+// link on or off, and the link with a copy button when it is on. The bar renders again on
+// each live event, so the card fades in only when it opens.
 function padlock(slug, path) {
   const open = Boolean(path)
-  const text = open ? location.origin + path : `Make ${slug} public in moki`
-  const card = `<div class="pop">
-      <b>${open ? 'Public' : 'Private'}</b>
-      <p>${open ? 'Anyone with this link can see every version. No password.' : `${PRIVATE} To share a link, ask your agent:`}</p>
-      <div class="link">
-        <span class="trunc">${esc(text)}</span>
-        <button class="ib" data-copy="${esc(text)}" aria-label="Copy" title="Copy">${icon('copy')}</button>
+  const url = esc(location.origin + path)
+  const card = `<div class="pop${app.linkFade ? ' fade' : ''}">
+      <div class="row">
+        <b>Public link</b>
+        <button class="switch" role="switch" aria-checked="${open}" aria-label="Public link" data-act="public"><i></i></button>
       </div>
-      ${open ? '<small>To make it private, ask your agent.</small>' : ''}
+      <p>${open ? 'Anyone with the link can see it. No password.' : PRIVATE}</p>
+      ${open ? `<div class="link">
+        <span class="trunc">${url}</span>
+        <button class="ib" data-copy="${url}" aria-label="Copy link" title="Copy link">${icon('copy')}</button>
+      </div>` : ''}
     </div>`
+  app.linkFade = false
   return `<button class="ib${app.linkOpen ? ' on' : ''}" data-act="link" aria-label="${open ? 'Public' : 'Private'}"
       title="${open ? PUBLIC : PRIVATE}">${icon(open ? 'unlock' : 'lock')}</button>
     ${app.linkOpen ? card : ''}`
@@ -47,7 +51,35 @@ const PRIVATE = 'Only people who can open moki can see it.'
 
 function toggleLink() {
   app.linkOpen = !app.linkOpen
-  document.querySelector('.vbar').innerHTML = viewerBar()
+  app.linkFade = app.linkOpen
+  renderBar()
+}
+
+const renderBar = () => (document.querySelector('.vbar').innerHTML = viewerBar())
+
+// togglePublic flips the public link of the project on screen. The switch moves at once,
+// and the card shows the link when moki answers. Off and on again makes a new link.
+async function togglePublic() {
+  if (app.sharing) return
+  const { slug } = app.route
+  const detail = app.detail[slug]
+  const want = !detail.share
+  document.querySelector('.switch').setAttribute('aria-checked', want)
+  app.sharing = true
+  try {
+    const res = await fetch(`/api/projects/${encodeURIComponent(slug)}/share`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ public: want }),
+    })
+    if (res.ok) {
+      detail.share = (await res.json()).share
+      const p = project(slug)
+      if (p) p.share = detail.share
+    }
+  } catch (e) {} // the switch goes back
+  app.sharing = false
+  if (app.route.slug === slug) setTimeout(renderBar, 150) // after the switch moved
 }
 
 // showLinkOff tells a visitor that the project of the link went private.

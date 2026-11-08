@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,8 +16,9 @@ import (
 )
 
 // Shares keeps the public links in the shares file, one "<id> <slug>" line each.
-// A link opens one project with no password. Only an agent turns it on or off, with
-// the share tool. Off removes the line, so sharing again makes a new link.
+// A link opens one project with no password. An agent turns it on or off with the share
+// tool, and the user with the switch in the viewer. Off removes the line, so sharing again
+// makes a new link.
 type Shares struct {
 	mu   sync.Mutex
 	path string
@@ -102,17 +104,10 @@ const shareDesc = "Make a project public or private. Only do it when the user as
 	"Private turns the link off. Sharing again makes a new link."
 
 func (s *Server) share(ctx context.Context, in shareIn) ([]mcp.Content, error) {
-	if err := checkSlug(in.Slug); err != nil {
-		return nil, err
-	}
-	if _, _, err := s.store.Project(in.Slug); err != nil {
-		return nil, err
-	}
-	id, err := s.shares.Set(in.Slug, in.Public)
+	id, err := s.setShare(in.Slug, in.Public)
 	if err != nil {
 		return nil, err
 	}
-	s.hub.Publish(Event{Type: "share", Slug: in.Slug})
 	text := in.Slug + " is private. Its link is off."
 	if in.Public {
 		text = in.Slug + " is public. Anyone with this link can see it: " + s.cfg.URL + sharePath(id)
@@ -121,6 +116,22 @@ func (s *Server) share(ctx context.Context, in shareIn) ([]mcp.Content, error) {
 		note(ctx, "%s · private", in.Slug)
 	}
 	return []mcp.Content{&mcp.TextContent{Text: text}}, nil
+}
+
+// setShare turns the link of a project on or off and tells the open pages.
+func (s *Server) setShare(slug string, public bool) (string, error) {
+	if err := checkSlug(slug); err != nil {
+		return "", err
+	}
+	if _, _, err := s.store.Project(slug); err != nil {
+		return "", err
+	}
+	id, err := s.shares.Set(slug, public)
+	if err != nil {
+		return "", err
+	}
+	s.hub.Publish(Event{Type: "share", Slug: slug})
+	return id, nil
 }
 
 // ---------- routes ----------
@@ -134,6 +145,7 @@ func (s *Server) shareRoutes() {
 	})
 	m.HandleFunc("GET /s/{id}/{$}", func(w http.ResponseWriter, r *http.Request) { serveAsset(w, r, "assets/ui/index.html") })
 	m.HandleFunc("GET /s/{id}/api", s.apiShare)
+	m.HandleFunc("POST /api/projects/{slug}/share", s.apiSetShare)
 	m.HandleFunc("GET /s/{id}/{ver}/{file...}", func(w http.ResponseWriter, r *http.Request) {
 		slug := s.shares.Slug(r.PathValue("id"))
 		if slug == "" {
@@ -151,6 +163,35 @@ func (s *Server) apiShare(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.writeProject(w, r, slug, "")
+}
+
+// apiSetShare is the switch in the viewer. The body is {"public": true} or false.
+// It must come from a moki page, so a page on another site cannot share a project.
+func (s *Server) apiSetShare(w http.ResponseWriter, r *http.Request) {
+	if !sameOrigin(w, r) {
+		return
+	}
+	var in struct {
+		Public bool `json:"public"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	slug := r.PathValue("slug")
+	id, err := s.setShare(slug, in.Public)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	state := "private"
+	if in.Public {
+		state = "public"
+	}
+	activity.Browser("made " + slug + " " + state)
+	writeJSON(w, r, struct {
+		Share string `json:"share"`
+	}{sharePath(id)})
 }
 
 // isOpen says if a path needs no password: the links, and the files of the moki page.

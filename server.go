@@ -68,6 +68,7 @@ func (s *Server) routes() {
 	m.Handle("/mcp", s.tokens.Require(newMCPHandler(s)))
 	s.tokenRoutes()
 	s.shareRoutes()
+	s.pushRoutes()
 }
 
 // ServeHTTP adds no-cache to every response and checks basic auth.

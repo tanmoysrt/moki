@@ -194,7 +194,8 @@ func (s *Server) apiSetShare(w http.ResponseWriter, r *http.Request) {
 	}{sharePath(id)})
 }
 
-// isOpen says if a path needs no password: the links, and the files of the moki page.
+// isOpen says if a path needs no password: the links, the files of the moki page,
+// and /api/upload, which checks the agent token like /mcp.
 func isOpen(p string) bool {
-	return openPaths[p] || strings.HasPrefix(p, "/s/") || strings.HasPrefix(p, "/ui/") || strings.HasPrefix(p, "/kit/")
+	return openPaths[p] || strings.HasPrefix(p, "/s/") || strings.HasPrefix(p, "/api/upload/") || strings.HasPrefix(p, "/ui/") || strings.HasPrefix(p, "/kit/")
 }

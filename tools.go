@@ -24,7 +24,10 @@ type memoryQueryIn struct {
 	Query string `json:"query,omitempty" jsonschema:"words to find in every memory, in any case. Without it, list the files"`
 }
 
-type none struct{}
+type listIn struct {
+	Query string `json:"query,omitempty" jsonschema:"words to find in the slug, title or note. Without it, the 30 newest projects"`
+	All   bool   `json:"all,omitempty" jsonschema:"every project, not only the 30 newest"`
+}
 
 // addTool adds a tool whose func returns content. A returned error becomes a tool
 // error that the agent reads and can fix. Each call prints an activity line.
@@ -52,7 +55,8 @@ func (s *Server) agent(r *mcp.CallToolRequest) string {
 
 func (s *Server) addTools(srv *mcp.Server) {
 	addTool(s, srv, "list_projects",
-		"List the projects: slug, title, description, version count, time and has_memory. "+
+		"List the projects, newest first: slug, newest version, date, title and note. "+
+			"With query, only the projects with all the words. "+
 			"At the start of a chat, read the guide and the design skill first (moki://llm-guide, moki://design-skill).",
 		s.listProjects)
 	addTool(s, srv, "get_project",
@@ -80,17 +84,52 @@ func (s *Server) addTools(srv *mcp.Server) {
 		s.writeMemory)
 }
 
-func (s *Server) listProjects(ctx context.Context, _ none) ([]mcp.Content, error) {
-	type item struct {
-		Project
-		HasMemory bool `json:"has_memory"`
+// listNewest is how many projects list_projects shows without query or all.
+const listNewest = 30
+
+// listProjects returns one short line per project, newest first. A JSON list of every
+// project grew past 20 KB of the agent's context on a busy moki.
+func (s *Server) listProjects(ctx context.Context, in listIn) ([]mcp.Content, error) {
+	words := strings.Fields(strings.ToLower(in.Query))
+	var lines []string
+	all := s.store.Projects()
+	for _, p := range all {
+		if len(words) > 0 && !hasWords(strings.ToLower(p.Slug+" "+p.Title+" "+p.Description), words) {
+			continue
+		}
+		lines = append(lines, s.projectLine(p))
 	}
-	list := []item{}
-	for _, p := range s.store.Projects() {
-		list = append(list, item{p, s.store.ReadMemory(p.Slug) != ""})
+	more := ""
+	if len(words) == 0 && !in.All && len(lines) > listNewest {
+		more = fmt.Sprintf("\n%d older projects. Call again with query, or with all: true.", len(lines)-listNewest)
+		lines = lines[:listNewest]
 	}
-	note(ctx, "%s", count(len(list), "project"))
-	return append([]mcp.Content{s.readFirst()}, jsonContent(list)...), nil
+	note(ctx, "%s", count(len(lines), "project"))
+	text := "slug · newest version · date · title: note\n" + joinLines(lines) + more
+	if len(lines) == 0 {
+		text = "No projects match."
+	}
+	return []mcp.Content{s.readFirst(), &mcp.TextContent{Text: text}}, nil
+}
+
+func (s *Server) projectLine(p Project) string {
+	line := fmt.Sprintf("%s · %s · %s · %s", p.Slug, p.Version, p.Time.Format("2006-01-02"), cut(p.Title, 60))
+	if p.Description != "" {
+		line += ": " + cut(p.Description, 100)
+	}
+	if s.store.ReadMemory(p.Slug) == "" {
+		line += " (no memory)"
+	}
+	return line
+}
+
+// cut shortens text to n runes with an ellipsis.
+func cut(text string, n int) string {
+	r := []rune(text)
+	if len(r) <= n {
+		return text
+	}
+	return strings.TrimSpace(string(r[:n-1])) + "…"
 }
 
 func (s *Server) getProject(ctx context.Context, in slugIn) ([]mcp.Content, error) {

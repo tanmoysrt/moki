@@ -136,6 +136,10 @@ people with the link leave notes too, with their name.
   The viewer shows it under "Fixed in vN" with your reply. A reply without done keeps the note open:
   use it for a question back. The user can reopen a note; then it is open again in get_project.
 - When the user says "I left notes" or "see my notes", call get_project.
+- While the user looks at a version, keep checking for notes and an approval in the background.
+  GET /api/notes/<slug> with the agent token returns the same text as "notes" in get_project:
+    until [ "$(curl -s -H "Authorization: Bearer $TOKEN" "$MOKI/api/notes/<slug>")" != "$before" ]; do sleep 30; done
+  Without a background task, call get_project again before each reply.
 - The approved version is the one to build. Write it to the memory too.
 
 

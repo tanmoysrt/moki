@@ -128,6 +128,12 @@ Diagram and art (`/kit/sketch.js`):
 ## Rounds
 
 - Read the memory and the notes before each round (`get_project`). The notes are pinned on the page: each says which element the user means.
+- After you send the viewer URL, keep checking for new notes and an approval in the background while the user looks. When your client can run a background shell task, wait for the notes text to change, then call `get_project`:
+  ```sh
+  before=$(curl -s -H "Authorization: Bearer $TOKEN" "$MOKI/api/notes/<slug>")
+  until [ "$(curl -s -H "Authorization: Bearer $TOKEN" "$MOKI/api/notes/<slug>")" != "$before" ]; do sleep 30; done
+  ```
+  Without a background task, call `get_project` again before each reply. When notes come in, tell the user and start the next round. When the user approves a version, that is the one to build.
 - Each round of feedback is a new version.
 - Keep the options that the user liked. Drop the ones the user rejected.
 - When the user makes the same complaint for 2 or 3 rounds, small changes do not work. Offer new layouts instead.

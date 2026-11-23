@@ -228,16 +228,14 @@ func (s *Server) pageWarnings(slug, ver string, files []string) []string {
 			out = append(out, f+": a URL points at localhost or 127.0.0.1. It breaks on other machines and public links. "+
 				"Upload the file with the mockup and use a relative path")
 		}
-		if !strings.HasSuffix(f, ".html") {
-			continue
-		}
-		title, desc := pageMeta(filepath.Join(s.store.VersionDir(slug, ver), f))
-		if title == "" {
-			out = append(out, f+": no <title>. Add the project title")
-		}
-		if desc == "" {
-			out = append(out, f+`: no <meta name="description">. Add what is new in this version`)
-		}
+	}
+	// moki reads the title and the note only from index.html.
+	title, desc := pageMeta(filepath.Join(s.store.VersionDir(slug, ver), "index.html"))
+	if title == "" {
+		out = append(out, "index.html: no <title>. Add the project title")
+	}
+	if desc == "" {
+		out = append(out, `index.html: no <meta name="description">. Add what is new in this version`)
 	}
 	return out
 }

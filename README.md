@@ -73,7 +73,9 @@ Ask your agent for a mockup:
 
 The agent uploads it to moki and sends you the link. Tell it what you think, and the next round arrives as a new version.
 
-To point at one spot, press <kbd>N</kbd> in the viewer and click the page: the note is pinned there, and the agent reads it in the next round. Approve the version you want built from the same list.
+To point at one spot, press <kbd>N</kbd> in the viewer and click the page: the note is pinned there, and the agent reads it in the next round. When the agent fixes a note, it marks it done with a reply: the list shows the open notes first, then what this version fixed, and you can reopen a note. Approve the version you want built from the same list.
+
+For a team review, turn on "Notes from people with the link" in the padlock card. People who open the public link then leave notes with their name, and see the agent's replies. They can delete only their own notes, and cannot approve or export.
 
 Press <kbd>E</kbd> for Export: PNG and PDF of any page, PDF and slide images of a deck, MP4 of a video and SVG of a drawing. moki makes the file in its own Chrome. MP4 needs ffmpeg; the Docker image has it.
 

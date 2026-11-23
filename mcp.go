@@ -22,8 +22,9 @@ Rules:
   Do not work from what you remember of an earlier chat.
 
 Each round:
-1. get_project(slug) before you work on a project. It has the memory of past rounds, and the notes
-   and approval that the user left in the viewer. Do what the notes say.
+1. get_project(slug) before you work on a project. It has the memory of past rounds, and the open notes
+   and approval that the user left in the viewer. Do what the notes say, and after the upload mark
+   them done with answer_notes.
    For a new project: search the memory with list_memory and query, and look at the user's product first.
 2. Follow the design skill (resource moki://design-skill).
 3. upload a new version. Use base with only the changed files, dir when you run on the moki machine,

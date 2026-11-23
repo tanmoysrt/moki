@@ -38,7 +38,8 @@ Rules
 3. Tools
 
   list_projects(query?, all?)         the 30 newest projects, or the ones that match the query
-  get_project(slug)                   versions, files, memory and notes: call it before you work on a project
+  get_project(slug)                   versions, files, memory and open notes: call it before you work on a project
+  answer_notes(slug, notes, version?) mark notes done in a version, or reply to them
   upload(slug, files | dir, ...)      make a version
   screenshot(slug, ...)               see your work
   download_project(slug, version?)    get the files back
@@ -125,13 +126,17 @@ Export: the viewer has an Export button (E). The export tool makes the same file
 5. Notes and approval
 
 The user can leave notes in the viewer: with the notes list open, a click on the page pins a note on
-that spot. The user can also approve a version there.
-- get_project returns them in "notes": the approved version, then each note with its version, page,
-  the element that the user clicked and a CSS path to it, and the text.
+that spot. The user can also approve a version there. When the user turns on notes for a public link,
+people with the link leave notes too, with their name.
+- get_project returns them in "notes": the approved version, then each open note with its id, version,
+  the name of a visitor, page, the element that was clicked and a CSS path to it, the text, and your
+  earlier reply. Done notes are only counted.
 - Read the notes each round, and do what they say in the next version. The CSS path finds the element.
+- After you upload that version, call answer_notes: {id, done: true, reply} for each note you fixed.
+  The viewer shows it under "Fixed in vN" with your reply. A reply without done keeps the note open:
+  use it for a question back. The user can reopen a note; then it is open again in get_project.
 - When the user says "I left notes" or "see my notes", call get_project.
 - The approved version is the one to build. Write it to the memory too.
-- You cannot write notes. Answer them in your reply and in the memory.
 
 
 6. Memory
@@ -181,6 +186,7 @@ Shared memory: rules for many projects, for example the house style of one produ
 4. Read the sheet and the warnings. Fix and upload again with version until it looks right.
 5. Call screenshot with themes: "both". Add full: true for long pages.
 6. Call write_memory with append: true. Write the brief, the decisions and the feedback of this round.
+   If you worked on notes, call answer_notes.
 7. Send the user the viewer URL and a short list of what is new. Recommend one option.
 
 When the user gives feedback, start the next version. Do not change a version that the user approved.

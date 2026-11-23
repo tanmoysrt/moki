@@ -4,6 +4,8 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -32,6 +34,20 @@ func (n *NoteStore) AgentNotes(slug string) string {
 		fmt.Fprintf(&b, "%s done. They are not shown.\n", count(done, "note"))
 	}
 	return b.String()
+}
+
+// agentNotesText serves the notes text of get_project over HTTP with the agent token,
+// so an agent can wait for new notes or an approval in a shell loop in the background.
+func (s *Server) agentNotesText(w http.ResponseWriter, r *http.Request) {
+	if _, ok := s.agentToken(w, r); !ok {
+		return
+	}
+	slug := r.PathValue("slug")
+	if checkSlug(slug) != nil || !isDir(filepath.Join(s.cfg.Dir, slug)) {
+		http.NotFound(w, r)
+		return
+	}
+	writeText(w, r, s.notes.AgentNotes(slug))
 }
 
 func writeAgentNote(b *strings.Builder, x Note) {

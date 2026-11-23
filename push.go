@@ -28,18 +28,16 @@ import (
 // Query: base, version, delete (repeat it), check=1 for the screenshot check.
 func (s *Server) pushRoutes() {
 	s.mux.HandleFunc("POST /api/upload/{slug}", s.push)
+	s.mux.HandleFunc("GET /api/notes/{slug}", s.agentNotesText)
 }
 
 const maxPush = 256 << 20
 
 func (s *Server) push(w http.ResponseWriter, r *http.Request) {
-	value, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-	tok, ok := s.tokens.Find(strings.TrimSpace(value))
+	tok, ok := s.agentToken(w, r)
 	if !ok {
-		http.Error(w, `missing or unknown token. Send the moki token as "Authorization: Bearer mk_..."`, http.StatusUnauthorized)
 		return
 	}
-	s.tokens.MarkUsed(tok)
 	r.Body = http.MaxBytesReader(w, r.Body, maxPush)
 	start := time.Now()
 	var text string
@@ -51,6 +49,18 @@ func (s *Server) push(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeText(w, r, out)
+}
+
+// agentToken checks the agent token of a request over plain HTTP, as /mcp does.
+func (s *Server) agentToken(w http.ResponseWriter, r *http.Request) (Token, bool) {
+	value, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	tok, ok := s.tokens.Find(strings.TrimSpace(value))
+	if !ok {
+		http.Error(w, `missing or unknown token. Send the moki token as "Authorization: Bearer mk_..."`, http.StatusUnauthorized)
+		return tok, false
+	}
+	s.tokens.MarkUsed(tok)
+	return tok, true
 }
 
 // pushVersion unpacks the body into a temporary folder and uploads it as dir.

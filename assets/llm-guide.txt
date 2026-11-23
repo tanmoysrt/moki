@@ -63,12 +63,16 @@ upload:
   the sheet. Then call screenshot to see it.
 - base: "v2" starts from v2. Then send only the files that changed. delete: ["old.html"] removes files.
 - version: "v2" replaces v2 for a small fix. Without it, moki makes the next version.
+- options: the options of the round. Section 5 has the format.
+- upload refuses files that are not part of a web page (html, css, js, json, images, fonts, audio,
+  video, csv, xml, wasm, 3D models, pdf), files over 10 MB, and options that do not follow the format.
+  Then it saves nothing and lists each problem. Fix them and upload again. Hidden files are skipped.
 - The reply has the viewer URL, warnings, and a desktop and phone sheet of index.html. Read them and fix
   what is wrong. check: false skips the sheet.
 
 screenshot:
 - versions: "v3", ["v2", "v3"] or "all". Default: the newest.
-- pages: ["index.html", "b.html", "page.html?v=a"] or "all".
+- pages: ["index.html", "b.html", "page.html?v=a"], "all", or ["options"] for each option page.
 - sizes: desktop, laptop, tablet, phone, phone-landscape, slide (1280x720), square, story, or "WxH".
   Default: desktop and phone.
 - themes: "light", "dark" or "both". Default: light.
@@ -78,6 +82,7 @@ screenshot:
 
 Viewer URLs: http://127.0.0.1:9999/#/p/<slug>/v3 opens index.html. Add a page to open it:
 #/p/<slug>/v3/page.html?v=a. Send that link when you want the user to look at one screen.
+A version with options opens the grid of the options.
 
 
 4. Decks, videos, diagrams and art
@@ -123,14 +128,63 @@ Export: the viewer has an Export button (E). The export tool makes the same file
 - Use it when the user asks for the file, for example "send me the deck as PDF".
 
 
-5. Notes and approval
+5. Options
+
+A round can show many ideas for each part. Give them as options. The viewer shows them as a grid of
+cards. The user opens one option at full size, steps through the options of the part, sees its states,
+and keeps the ones worth another round.
+
+- Put each option on its own page, for example plans.html?v=a, and each state of an option on a page
+  too: plans.html?v=a&s=empty.
+- Give the options in the options field of upload. moki writes them to options.json in the version.
+  With dir or tar, write options.json yourself:
+
+  {
+    "parts": [
+      {
+        "title": "Plans page",
+        "size": "1280x560",
+        "options": [
+          { "id": "A", "name": "Three cards", "note": "Free, Pro and Team side by side.", "page": "plans.html?v=a" },
+          { "id": "B", "name": "Comparison table", "note": "Plans are columns.", "page": "plans.html?v=b",
+            "rec": true, "states": [{ "name": "Empty", "page": "plans.html?v=b&s=empty" }] }
+        ]
+      }
+    ]
+  }
+
+  parts     1 or more. A part is one question of the round: a screen, the intro video, the deck cover
+  title     the name of the part, up to 80 characters, unique in the version
+  size      WxH of a screen card. Crop it to the part that differs. Default 1280x800. A deck or a
+            video card takes the size of the page
+  options   1 to 40 for each part. In the first round, give 5 or more
+  id        A, B, C: up to 8 characters, unique in the part
+  name      up to 80 characters
+  note      one line on what is different, up to 300 characters
+  rec       true for the option you recommend
+  page      an .html file of the version, with a query or a #hash when it needs one
+  states    other pages of the option: name (up to 40 characters) and page
+
+- A field that is not in this list is an error. upload names each problem with its place, for example:
+    options.json parts[0].options[2]: page "zz.html" is not in the version
+- index.html still gives the title and the note of the version. The viewer shows the grid in its place.
+- Viewer URLs: #/p/<slug>/v3 opens the grid, #/p/<slug>/v3/plans.html?v=b opens one option.
+  Keys: G the grid, [ and ] the options, K keep, D desktop and phone.
+- get_project lists the options of the newest version in "notes", and marks the kept ones. Build the
+  next round from the kept options and drop the rest. Section 6 has the notes.
+
+
+6. Notes and approval
 
 The user can leave notes in the viewer: with the notes list open, a click on the page pins a note on
 that spot. The user can also approve a version there. When the user turns on notes for a public link,
 people with the link leave notes too, with their name.
-- get_project returns them in "notes": the approved version, then each open note with its id, version,
-  the name of a visitor, page, the element that was clicked and a CSS path to it, the text, and your
-  earlier reply. Done notes are only counted.
+- get_project returns them in "notes": the approved version, the options and the kept ones, then each
+  open note with its id, version, the option, "phone" for a note on the phone, the name of a visitor,
+  page, the element that was clicked and a CSS path to it, the text, and your earlier reply. Done notes
+  are only counted.
+- The viewer can show the page at desktop width and on a phone side by side (D). A note on the phone
+  says "phone": fix the phone layout.
 - Read the notes each round, and do what they say in the next version. The CSS path finds the element.
 - After you upload that version, call answer_notes: {id, done: true, reply} for each note you fixed.
   The viewer shows it under "Fixed in vN" with your reply. A reply without done keeps the note open:
@@ -143,7 +197,7 @@ people with the link leave notes too, with their name.
 - The approved version is the one to build. Write it to the memory too.
 
 
-6. Memory
+7. Memory
 
 A new chat does not know the earlier rounds. The memory tells it. Each project has one markdown file,
 ~/.moki/memory/<slug>.md. moki only stores it. You write it and you read it.
@@ -179,16 +233,18 @@ Shared memory: rules for many projects, for example the house style of one produ
   the shared memory in "shared". Names are split by commas or spaces: "uses: csema, admin".
 
 
-7. Each round
+8. Each round
 
 1. For a project that exists, call get_project. Read the memory, the shared memory, the notes and the
    newest version.
    For a new project, search the memory with list_memory and query, and look at the user's product
    first. The design skill says how.
 2. Make the mockups. Follow the design skill.
-3. Upload: with base and only the changed files, with dir, or with tar over HTTP.
+3. Upload: with base and only the changed files, with dir, or with tar over HTTP. Give the options
+   of the round in options or options.json.
 4. Read the sheet and the warnings. Fix and upload again with version until it looks right.
-5. Call screenshot with themes: "both". Add full: true for long pages.
+5. Call screenshot with themes: "both". Add full: true for long pages, and pages: ["options"] for
+   the options.
 6. Call write_memory with append: true. Write the brief, the decisions and the feedback of this round.
    If you worked on notes, call answer_notes.
 7. Send the user the viewer URL and a short list of what is new. Recommend one option.

@@ -41,39 +41,51 @@ Mockup first: before you change UI, refactor a screen or design a new page, make
 
 ## The page
 
-Keep one version to one `index.html` that shows every idea of the round. A suggested layout:
+Show the ideas of a round as options. moki draws them as a grid of cards. The user opens one option at full size, steps through the options of a part with `[` and `]`, sees its states, and keeps the ones worth another round. `get_project` lists the options and marks the kept ones.
 
-1. A title and one line on what the round is about and where the data comes from.
-2. Sections, one for each question: for example "Team page as the owner" or "Invite flow".
-3. Options in each section: a letter, a short name, and one line on what is different. Mark the one you recommend.
-4. Frames for each option: desktop (1280) and phone (390) next to each other, scaled down. Add more frames for more states, such as owner, member and visitor.
+Options must differ in idea, not only in color. In the first round, give at least 5 options for each part. Give more when the user wants to explore. Brainstorm first: list 8 to 10 ideas, and show the 5 or more that differ most.
 
-Options must differ in idea, not only in color. Give 3 to 5 options for a new screen.
+What an option can be:
+- Screen: a layout (cards, table, rows, one item first, a wizard), or where the main action sits.
+- Video: the opening (a word, a number, the product, a terminal) and the style (calm, fast, bold).
+- Deck: the cover, and one key slide such as the numbers or the plan.
+- Drawing or art: the style (hand-drawn, clean, flat color, line art), or the metaphor.
+- Also: logos, emails, headlines and copy, charts, empty states and onboarding.
 
-Put each screen in its own file, for example `page.html?v=a&as=owner`, and show it in the frames with `<iframe>`. Then the frames are live: the user can click in them.
+Narrow down with each version:
+1. v1 explores: 5 or more options for each part. The user keeps the ones worth another round.
+2. v2 takes only the kept options, with 2 or 3 variants of each.
+3. v3 is one option with all its states: empty, full, error, owner and visitor.
+4. Then the user approves, and you build it.
 
-In a frame, do not call `scrollIntoView`. It also scrolls the page around the frame. Set `scrollTop` on the scroll container instead.
+Put each option on its own page, for example `plans.html?v=a`, and each state too: `plans.html?v=a&s=empty`. Then give the options in the `options` field of `upload`. moki writes them to `options.json` in the version. With `dir` or tar, write `options.json` yourself:
 
-`/kit/board.js` draws this layout for you. Optional:
-
-```html
-<script>
-window.BOARD = {
-  title: 'Team page and invites',
-  intro: 'One line on the round.',
-  frame: 'page.html',
-  sections: [
-    { short: '1 Owner', title: '1. Team page as the owner', opts: [
-      { l: 'A', n: 'One page', rec: true, note: 'What is different.', fr: [['', 'v=a&as=owner']] },
-      { l: 'B', n: 'Seats', note: 'What is different.', fr: [['Owner', 'v=b&as=owner'], ['Member', 'v=b&as=member']] },
-    ]},
-  ],
+```json
+{
+  "parts": [
+    {
+      "title": "Plans page",
+      "size": "1280x560",
+      "options": [
+        { "id": "A", "name": "Three cards", "note": "Free, Pro and Team side by side.", "page": "plans.html?v=a" },
+        { "id": "B", "name": "Comparison table", "note": "Plans are columns.", "page": "plans.html?v=b", "rec": true,
+          "states": [{ "name": "Empty", "page": "plans.html?v=b&s=empty" }] }
+      ]
+    }
+  ]
 }
-</script>
-<script src="/kit/board.js"></script>
 ```
 
-`board.js` shows only the phone frames on a phone, and it follows the moki theme. It has no theme button. You can also make your own page: a switcher, tabs, one long screen. Pick what makes the choice easy.
+- A part is one question of the round: the plans page, the intro video, the deck cover.
+- `size` is the card of a screen. Crop it to the part that differs. A deck or a video card takes the size of the page.
+- `note` says in one line what is different. `rec: true` marks the one you recommend.
+- `upload` refuses options that do not follow the format, and files that are not part of a web page. It saves nothing and lists each problem. Fix them and upload again. The guide has each rule, in section Options.
+- `index.html` still gives the title and the note of the version. The viewer shows the grid in its place.
+- `screenshot` with `pages: ["options"]` takes each option page.
+
+A round with one option and its states needs no options: show it in `index.html`. `/kit/board.js` draws a page of frames, desktop and phone side by side for each state. The comment at its top shows how.
+
+In a frame, do not call `scrollIntoView`. It also scrolls the page around the frame. Set `scrollTop` on the scroll container instead.
 
 ## Decks, videos, diagrams and art
 
@@ -116,7 +128,7 @@ Diagram and art (`/kit/sketch.js`):
 ## Check your work
 
 1. Upload, then read the sheet and the warnings that come back.
-2. Call `screenshot` with sizes desktop and phone and `themes: "both"`. Add `full: true` for long pages. For a deck or a video, use size `slide`.
+2. Call `screenshot` with sizes desktop and phone and `themes: "both"`. Add `full: true` for long pages. For a deck or a video, use size `slide`. For a round of options, add `pages: ["options"]`.
 3. Check each screen:
    - One primary button. No eyebrow, no repeated fact, no card in a card.
    - Buttons, inputs and bars have the same height and padding on every screen.
@@ -135,7 +147,7 @@ Diagram and art (`/kit/sketch.js`):
   ```
   Without a background task, call `get_project` again before each reply. When notes come in, tell the user and start the next round. When the user approves a version, that is the one to build.
 - Each round of feedback is a new version.
-- Keep the options that the user liked. Drop the ones the user rejected.
+- Build the next round from the kept options. Drop the others. A note on an option names it, for example `Plans page B, Empty`. A note pinned on the phone frame of the viewer says `phone`: fix the phone layout.
 - When the user makes the same complaint for 2 or 3 rounds, small changes do not work. Offer new layouts instead.
 - Do not change a version that the user approved.
 - Write the decisions to memory with `write_memory` and `append: true`: the feedback, what you kept, what the user rejected, and the approved version. The guide has more on memory.

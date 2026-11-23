@@ -27,6 +27,7 @@
 ## Why moki
 
 - **Mockup first.** Your agent shows you the screen before it touches the real code.
+- **Many ideas, then one.** The agent shows 5 or more options for each part. Open one at full size, keep the best, and the next round builds on them.
 - **Every round is a version.** Step through v1, v2 and v3 and compare them at the same scroll spot.
 - **Live.** The page updates the moment the agent uploads.
 - **Any content.** Ask for a deck, a 10-second video or a diagram, and export it as PDF, MP4, PNG or SVG.
@@ -73,6 +74,8 @@ Ask your agent for a mockup:
 
 The agent uploads it to moki and sends you the link. Tell it what you think, and the next round arrives as a new version.
 
+A round of options opens as a grid. Click a card to see the option at full size, step through the options with <kbd>[</kbd> <kbd>]</kbd>, and press <kbd>K</kbd> to keep it. The agent builds the next round from what you keep. Press <kbd>D</kbd> to see a page at desktop width and on a phone side by side.
+
 To point at one spot, press <kbd>N</kbd> in the viewer and click the page: the note is pinned there, and the agent reads it in the next round. When the agent fixes a note, it marks it done with a reply: the list shows the open notes first, then what this version fixed, and you can reopen a note. Approve the version you want built from the same list.
 
 For a team review, turn on "Notes from people with the link" in the padlock card. People who open the public link then leave notes with their name, and see the agent's replies. They can delete only their own notes, and cannot approve or export.
@@ -83,7 +86,7 @@ Press <kbd>E</kbd> for Export: PNG and PDF of any page, PDF and slide images of 
   <img src=".github/assets/viewer.png" alt="A profile page mockup in the moki viewer" width="100%">
 </p>
 
-<kbd>←</kbd> <kbd>→</kbd> step versions · <kbd>N</kbd> notes · <kbd>E</kbd> export · <kbd>Esc</kbd> back to projects · <kbd>/</kbd> search
+<kbd>←</kbd> <kbd>→</kbd> step versions · <kbd>G</kbd> all options · <kbd>[</kbd> <kbd>]</kbd> step options · <kbd>K</kbd> keep · <kbd>D</kbd> desktop and phone · <kbd>N</kbd> notes · <kbd>E</kbd> export · <kbd>Esc</kbd> back to projects · <kbd>/</kbd> search
 
 <details>
 <summary><b>Commands</b></summary>

@@ -30,8 +30,10 @@ Each round:
 3. upload a new version. Use base with only the changed files, dir when you run on the moki machine,
    or tar over HTTP from another machine (the guide has the curl line).
    Give index.html a <title> (the project title) and <meta name="description"> (what is new in this round).
+   Give the options of the round in the options field: 5 or more for each part in the first round.
 4. Read the sheet and the warnings that upload returns. Fix them with upload version: "vN".
-5. screenshot with themes: "both", and full: true for long pages.
+   When upload refuses the files or the options, nothing was saved: fix each problem and upload again.
+5. screenshot with themes: "both", and full: true for long pages. pages: ["options"] takes the options.
 6. write_memory with append: true: the brief, the decisions, the feedback.
 7. Send the user the viewer URL.
 
@@ -131,9 +133,9 @@ Brief:
 Steps:
 1. Read the design skill below and follow it. Do its "Before you start" steps first:
    search the memory and look at my product.
-2. Make one index.html that shows the options of this round. Give it a <title> and a <meta name="description">.
-3. Call upload with slug %q. Read the sheet and the warnings, and fix them with upload version: "v1".
-4. Call screenshot with themes: "both". Add full: true for long pages.
+2. Make a page for each option of this round: 5 or more for each part. Give index.html a <title> and a <meta name="description">.
+3. Call upload with slug %q and the options of the round in options. Read the sheet and the warnings, and fix them with upload version: "v1".
+4. Call screenshot with themes: "both" and pages: ["options"]. Add full: true for long pages.
 5. Call write_memory with the brief and the decisions of this round.
 6. Send me the viewer URL and a short list of the options. Recommend one.
 
@@ -159,8 +161,8 @@ Feedback:
 %s
 
 Steps:
-1. Read the memory and the newest version. Call download_project or screenshot when you need to see it.
-2. Make the next version. Keep what I liked, drop what I rejected. Follow the design skill (moki://design-skill).
+1. Call get_project: it has the options I kept and my open notes. Call download_project or screenshot when you need to see the newest version.
+2. Make the next version from the options I kept, and drop the rest. Keep what I liked, drop what I rejected. Follow the design skill (moki://design-skill).
 3. Call upload with base set to the newest version and only the changed files. Update <meta name="description">.
 4. Read the sheet and the warnings, and fix them. Then call screenshot with themes: "both".
 5. Call write_memory with append: true: the feedback and the decisions of this round.

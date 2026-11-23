@@ -34,6 +34,24 @@ func (s *Store) ReadMemory(slug string) string {
 	return string(b)
 }
 
+// Shared returns the memories that a project memory names in a "uses:" line, for example
+// "uses: csema" for one house style that many projects follow. They are not followed further.
+func (s *Store) Shared(memory string) map[string]string {
+	out := map[string]string{}
+	for line := range strings.Lines(memory) {
+		names, ok := strings.CutPrefix(strings.TrimSpace(line), "uses:")
+		if !ok {
+			continue
+		}
+		for _, slug := range strings.FieldsFunc(names, func(r rune) bool { return r == ',' || r == ' ' }) {
+			if checkSlug(slug) == nil && out[slug] == "" {
+				out[slug] = s.ReadMemory(slug)
+			}
+		}
+	}
+	return out
+}
+
 func (s *Store) WriteMemory(slug, content string, add bool) error {
 	if err := os.MkdirAll(filepath.Join(s.dir, "memory"), 0o755); err != nil {
 		return err

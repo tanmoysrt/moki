@@ -147,10 +147,12 @@ func (s *Server) getProject(ctx context.Context, in slugIn) ([]mcp.Content, erro
 	}
 	out := struct {
 		Project
-		Share  string `json:"share,omitempty"` // the public link, when there is one
-		Memory string `json:"memory"`
-		List   []ver  `json:"list"`
+		Share  string            `json:"share,omitempty"` // the public link, when there is one
+		Memory string            `json:"memory"`
+		Shared map[string]string `json:"shared,omitempty"` // memories named in a "uses:" line
+		List   []ver             `json:"list"`
 	}{Project: p, Memory: s.store.ReadMemory(in.Slug)}
+	out.Shared = s.store.Shared(out.Memory)
 	if id := s.shares.All()[in.Slug]; id != "" {
 		out.Share = s.cfg.URL + sharePath(id)
 	}

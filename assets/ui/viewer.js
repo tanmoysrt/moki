@@ -5,7 +5,10 @@
 function viewer() {
   return `<div class="viewer">
     <div class="vbar">${viewerBar()}</div>
-    <div class="canvas">${pageFrame()}</div>
+    <div class="vbody">
+      <div class="canvas">${pageFrame()}<div class="pins"></div></div>
+      ${share ? '' : '<aside class="npanel" hidden></aside>'}
+    </div>
     <div class="stepper num">${stepper()}</div>
   </div>`
 }
@@ -19,9 +22,10 @@ function viewerBar() {
     <div class="sp"></div>
     ${share ? '' : padlock(slug, link)}
     ${themeButton()}
-    <a class="ib" href="${pageURL(slug, ver)}" target="_blank" aria-label="Open in a new tab" title="Open in a new tab">
+    <a class="ib" href="${pageURL(slug, ver, app.route.page)}" target="_blank" aria-label="Open in a new tab" title="Open in a new tab">
       ${icon('ext')}
-    </a>`
+    </a>
+    ${share ? '' : notesButton()}`
 }
 
 // padlock says if the project is public. Its card has a switch that turns the public
@@ -118,8 +122,8 @@ function stepper() {
 }
 
 function pageFrame(scroll = 0) {
-  const { slug, ver } = app.route
-  return `<iframe src="${pageURL(slug, ver)}" title="${esc(slug)} ${ver}" data-scroll="${scroll}" onload="pageReady(this)"></iframe>`
+  const { slug, ver, page } = app.route
+  return `<iframe src="${pageURL(slug, ver, page)}" data-at="${esc(ver + '/' + page)}" title="${esc(slug)} ${ver}" data-scroll="${scroll}" onload="pageReady(this)"></iframe>`
 }
 
 const viewerTitle = () => `${app.detail[app.route.slug].title || app.route.slug} ${app.route.ver} · moki`
@@ -132,13 +136,15 @@ function showVersion(reload = false) {
   document.querySelector('.stepper').innerHTML = stepper()
   document.title = viewerTitle()
   revealPill()
+  app.draft = null
+  renderNotes()
 
   const canvas = document.querySelector('.canvas')
   const shown = [...canvas.querySelectorAll('iframe.ready')].pop()
-  if (!reload && shown?.getAttribute('src') === pageURL(app.route.slug, app.route.ver)) return
+  if (!reload && shown?.dataset.at === app.route.ver + '/' + app.route.page) return
   canvas.querySelectorAll('iframe:not(.ready)').forEach((f) => f.remove()) // still loading, and out of date
-  canvas.insertAdjacentHTML('beforeend', pageFrame(pageScroll(shown)))
-  canvas.lastElementChild.classList.add('incoming')
+  canvas.querySelector('.pins').insertAdjacentHTML('beforebegin', pageFrame(pageScroll(shown)))
+  canvas.querySelector('iframe:not(.ready)').classList.add('incoming')
 }
 
 // pageReady runs when a page loads in the viewer. The page gets the moki theme, the scroll
@@ -147,12 +153,38 @@ function pageReady(frame) {
   const scroll = Number(frame.dataset.scroll)
   frame.dataset.scroll = 0 // a link inside the page opens a new document at the top
   setFrameTheme(frame)
+  followPage(frame)
+  notesFrame(frame)
   try {
     if (scroll) frame.contentWindow.scrollTo(0, scroll)
     frame.contentDocument.addEventListener('keydown', forwardKey)
   } catch (e) {}
   frame.classList.add('ready')
-  removeOlder(frame, 200)
+  // the pages under this one go after the fade. The pins and the note box stay.
+  const frames = [...frame.parentElement.querySelectorAll('iframe')]
+  const older = frames.slice(0, frames.indexOf(frame))
+  setTimeout(() => older.forEach((f) => f.remove()), 200)
+  setTimeout(placePins, 220) // after the old page is gone
+}
+
+// followPage puts the page on screen in the viewer URL, when a link inside the page
+// opens another one. Then the URL in the address bar points at what the user sees.
+function followPage(frame) {
+  let page
+  try {
+    const loc = frame.contentWindow.location
+    const root = versionRoot(app.route.slug, app.route.ver)
+    if (!loc.pathname.startsWith(root)) return
+    page = decodeURI(loc.pathname.slice(root.length)) + loc.search + loc.hash
+  } catch (e) {
+    return
+  }
+  if (page === 'index.html') page = ''
+  if (page === app.route.page) return
+  app.route.page = page
+  frame.dataset.at = app.route.ver + '/' + page
+  history.replaceState(null, '', viewerHash(app.route.slug, app.route.ver, page))
+  renderBar() // open in a new tab follows the page
 }
 
 function pageScroll(frame) {
@@ -168,7 +200,7 @@ function pageScroll(frame) {
 function forwardKey(e) {
   const own = e.defaultPrevented || e.target.closest?.('input, textarea, select, [contenteditable]')
   const modified = e.metaKey || e.ctrlKey || e.altKey
-  if (own || modified || !['Escape', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return
+  if (own || modified || !['Escape', 'ArrowLeft', 'ArrowRight', 'n'].includes(e.key)) return
   document.dispatchEvent(new KeyboardEvent('keydown', { key: e.key }))
 }
 
@@ -180,7 +212,7 @@ function step(direction) {
   const { slug, ver } = app.route
   const list = app.detail[slug].list
   const next = list[list.findIndex((v) => v.version === ver) - direction]
-  if (next) location.hash = viewerHash(slug, next.version)
+  if (next) location.hash = viewerHash(slug, next.version, app.route.page)
 }
 
 // followChanges applies version events to the open viewer. On the newest version the
@@ -201,9 +233,9 @@ async function followChanges(events) {
   for (const v in fresh) if (!detail.list.some((x) => x.version === v)) delete fresh[v]
 
   const newest = detail.list[0].version
-  if (!detail.list.some((v) => v.version === ver)) return location.replace(viewerHash(slug, newest))
+  if (!detail.list.some((v) => v.version === ver)) return location.replace(viewerHash(slug, newest, app.route.page))
   if (ver === newestBefore && newest !== ver) {
-    location.hash = viewerHash(slug, newest)
+    location.hash = viewerHash(slug, newest, app.route.page)
     return
   }
   showVersion(mine.some((e) => e.version === ver))

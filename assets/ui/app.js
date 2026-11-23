@@ -1,5 +1,6 @@
 // moki UI: one state object, hash routes, one render, event delegation.
-// Routes: #/ is the projects home, #/p/<slug>/<version> is the viewer.
+// Routes: #/ is the projects home, #/p/<slug>/<version> is the viewer, and
+// #/p/<slug>/<version>/<page> opens another page of the version, with its query: page.html?v=a.
 // Data comes from /api/projects and /api/projects/<slug>. /api/events says when a version changes.
 // A public link, /s/<id>/#/<version>, shows only the viewer of one project, from /s/<id>/api,
 // with no password and no live updates.
@@ -18,6 +19,8 @@ const app = {
   linkOpen: false, // the card of the viewer padlock
   linkFade: false, // the card fades in when it opens, not on each render
   sharing: false, // the public switch waits for moki
+  notesOpen: false, // the notes list in the viewer
+  draft: null, // a note the user types, on the spot they clicked
   down: false, // moki does not answer
   homeScroll: 0,
 }
@@ -38,9 +41,9 @@ async function start() {
 
 function parseRoute() {
   const parts = location.hash.split('/')
-  if (share) return { name: 'view', slug: share, ver: parts[1] || '' }
-  const [, kind, slug, ver = ''] = parts
-  return kind === 'p' && slug ? { name: 'view', slug, ver } : { name: 'home' }
+  if (share) return { name: 'view', slug: share, ver: parts[1] || '', page: parts.slice(2).join('/') }
+  const [, kind, slug, ver = '', ...page] = parts
+  return kind === 'p' && slug ? { name: 'view', slug, ver, page: page.join('/') } : { name: 'home' }
 }
 
 async function route() {
@@ -49,6 +52,7 @@ async function route() {
   if (prev.name === 'home' && next.name === 'view') app.homeScroll = scrollY
   app.route = next
   if (next.slug !== prev.slug) app.linkOpen = false
+  app.draft = null
 
   if (next.name === 'view' && !app.down) {
     let detail
@@ -76,7 +80,10 @@ function render() {
   if (app.dialog) document.body.insertAdjacentHTML('beforeend', connectDialog())
   document.title = viewing ? viewerTitle() : 'moki'
 
-  if (viewing) return revealPill()
+  if (viewing) {
+    renderNotes()
+    return revealPill()
+  }
   filter()
   scrollTo(0, app.homeScroll)
 }
@@ -115,8 +122,9 @@ async function loadProject(slug, reload = false) {
 
 const project = (slug) => app.projects.find((p) => p.slug === slug)
 const versionNumber = (ver) => Number(ver.slice(1))
-const pageURL = (slug, ver) => (share ? `/s/${share}/${ver}/index.html` : `/p/${slug}/${ver}/index.html`)
-const viewerHash = (slug, ver) => (share ? `#/${ver}` : `#/p/${slug}/${ver}`)
+const versionRoot = (slug, ver) => `${share ? `/s/${share}` : `/p/${slug}`}/${ver}/`
+const pageURL = (slug, ver, page = '') => versionRoot(slug, ver) + (page || 'index.html')
+const viewerHash = (slug, ver, page = '') => `${share ? '#' : `#/p/${slug}`}/${ver}${page ? '/' + page : ''}`
 
 // ---------- live update ----------
 // The server sends "change" when a version is new, changed or gone, "thumb" when its
@@ -140,6 +148,7 @@ function listen() {
   events.addEventListener('thumb', () => queueRefresh())
   events.addEventListener('agent', () => queueRefresh())
   events.addEventListener('share', (e) => queueRefresh(JSON.parse(e.data)))
+  events.addEventListener('notes', (e) => notesChanged(JSON.parse(e.data)))
 }
 
 let queued = []
@@ -199,6 +208,8 @@ const actions = {
   close: closeConnect,
   link: toggleLink,
   public: togglePublic,
+  notes: toggleNotes,
+  approve,
 }
 
 async function copy(button) {
@@ -228,7 +239,7 @@ document.addEventListener('click', (e) => {
   if (!target) return
   if (target.classList.contains('scrim') && e.target !== target) return // a click inside the dialog
   if (target.dataset.act) actions[target.dataset.act]()
-  else if (target.dataset.ver) location.hash = viewerHash(app.route.slug, target.dataset.ver)
+  else if (target.dataset.ver) location.hash = viewerHash(app.route.slug, target.dataset.ver, app.route.page)
   else if (target.dataset.step) step(Number(target.dataset.step))
   else if (target.dataset.copy) copy(target)
 })
@@ -244,7 +255,9 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (app.dialog) return actions.close()
     if (app.linkOpen) return toggleLink()
+    if (app.draft) return cancelDraft()
     if (typing) return e.target.blur()
+    if (app.notesOpen) return toggleNotes()
     if (app.route.name === 'view' && !share) location.hash = '#/'
     return
   }
@@ -258,6 +271,7 @@ document.addEventListener('keydown', (e) => {
   if (app.route.name !== 'view') return
   if (e.key === 'ArrowLeft') step(-1)
   if (e.key === 'ArrowRight') step(1)
+  if (e.key === 'n' && !share) toggleNotes()
 })
 
 addEventListener('hashchange', route)

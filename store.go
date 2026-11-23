@@ -116,8 +116,8 @@ func checkSlug(slug string) error {
 	if !slugRe.MatchString(slug) {
 		return fmt.Errorf(`slug %q is not valid. Use lowercase letters, digits and "-", for example "my-app"`, slug)
 	}
-	if slug == "memory" {
-		return fmt.Errorf(`slug "memory" is reserved. Pick another slug, for example "memory-page"`)
+	if slug == "memory" || slug == "notes" {
+		return fmt.Errorf(`slug %q is reserved. Pick another slug, for example "%s-page"`, slug, slug)
 	}
 	return nil
 }

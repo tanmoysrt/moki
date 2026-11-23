@@ -162,7 +162,7 @@ func (s *Server) apiShare(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "this link is off", http.StatusNotFound)
 		return
 	}
-	s.writeProject(w, r, slug, "")
+	s.writeProject(w, r, slug, "", nil)
 }
 
 // apiSetShare is the switch in the viewer. The body is {"public": true} or false.

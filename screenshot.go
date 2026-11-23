@@ -138,8 +138,9 @@ func (s *Server) pickPages(slug, ver string, v any) ([]string, error) {
 	case len(list) == 1 && list[0] == "all":
 		return html, nil
 	}
+	// A page can carry a query or a hash, for example page.html?v=a: the file must exist.
 	for _, page := range list {
-		if !hasFile(files, page) {
+		if !hasFile(files, strings.SplitN(strings.SplitN(page, "#", 2)[0], "?", 2)[0]) {
 			return nil, fmt.Errorf("page %q is not in %s. Its pages are %s", page, ver, strings.Join(html, ", "))
 		}
 	}

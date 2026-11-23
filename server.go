@@ -27,6 +27,7 @@ type Server struct {
 	hub    *Hub
 	tokens *Tokens
 	shares *Shares
+	notes  *NoteStore
 	shots  *Shooter
 	thumbs *Thumbs
 	mux    *http.ServeMux
@@ -38,6 +39,7 @@ func NewServer(cfg Config) *Server {
 		store:  &Store{dir: cfg.Dir},
 		tokens: &Tokens{path: filepath.Join(cfg.Dir, "tokens")},
 		shares: &Shares{path: filepath.Join(cfg.Dir, "shares")},
+		notes:  &NoteStore{dir: filepath.Join(cfg.Dir, "notes")},
 		mux:    http.NewServeMux(),
 	}
 	s.shots = NewShooter(cfg)
@@ -69,6 +71,7 @@ func (s *Server) routes() {
 	s.tokenRoutes()
 	s.shareRoutes()
 	s.pushRoutes()
+	s.noteRoutes()
 }
 
 // ServeHTTP adds no-cache to every response and checks basic auth.
@@ -151,10 +154,12 @@ func (s *Server) apiProjects(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) apiProject(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
-	s.writeProject(w, r, slug, sharePath(s.shares.All()[slug]))
+	notes := s.notes.Read(slug)
+	s.writeProject(w, r, slug, sharePath(s.shares.All()[slug]), &notes)
 }
 
-func (s *Server) writeProject(w http.ResponseWriter, r *http.Request, slug, share string) {
+// writeProject sends a project with its versions. A public link gets no notes.
+func (s *Server) writeProject(w http.ResponseWriter, r *http.Request, slug, share string, notes *ProjectNotes) {
 	p, vers, err := s.store.Project(slug)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -162,9 +167,10 @@ func (s *Server) writeProject(w http.ResponseWriter, r *http.Request, slug, shar
 	}
 	writeJSON(w, r, struct {
 		Project
-		Share string    `json:"share,omitempty"`
-		List  []Version `json:"list"`
-	}{p, share, vers})
+		Share string        `json:"share,omitempty"`
+		List  []Version     `json:"list"`
+		Notes *ProjectNotes `json:"notes,omitempty"`
+	}{p, share, vers, notes})
 }
 
 func (s *Server) serveThumb(w http.ResponseWriter, r *http.Request) {

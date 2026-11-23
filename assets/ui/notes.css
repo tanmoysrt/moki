@@ -1,0 +1,272 @@
+/* Notes in the viewer: the bar button, pins over the page, the note box and the list. */
+
+.vbody {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.vbody > .canvas {
+  min-width: 0;
+}
+
+/* the notes button shows the count of the version while the list is closed */
+.nb {
+  position: relative;
+}
+
+.nb b {
+  position: absolute;
+  top: 2px;
+  right: 1px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--live);
+  color: #fff;
+  font-size: 10px;
+  line-height: 15px;
+  font-weight: 600;
+}
+
+/* ---------- pins ---------- */
+
+.pins {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pin {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 11px 11px 11px 3px;
+  background: var(--live);
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.pins .pin {
+  position: absolute;
+  margin: -22px 0 0 -3px; /* the sharp corner sits on the spot */
+  box-shadow: 0 0 0 2px var(--card), var(--xs);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.pins .pin.open {
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 5px color-mix(in srgb, var(--live) 30%, transparent);
+}
+
+.pins .pin.flash {
+  animation: flash 0.6s ease;
+}
+
+@keyframes flash {
+  50% {
+    box-shadow: 0 0 0 2px var(--card), 0 0 0 8px color-mix(in srgb, var(--live) 35%, transparent);
+  }
+}
+
+/* ---------- the note box, next to the draft pin ---------- */
+
+.nbox {
+  position: absolute;
+  z-index: 3;
+  width: 280px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--pop);
+}
+
+.nbox textarea {
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 10px;
+  display: block;
+  resize: none;
+  border: 0;
+  border-radius: 8px;
+  outline: 0;
+  background: var(--code);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--hi);
+  font: inherit;
+}
+
+.nbox textarea:focus {
+  box-shadow: inset 0 0 0 1px var(--dim);
+}
+
+.nrow {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.kbd {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--accented);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+/* ---------- the list ---------- */
+
+.npanel {
+  width: 320px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  box-shadow: -1px 0 0 var(--border);
+}
+
+.nhead {
+  height: 44px;
+  flex: none;
+  padding: 0 8px 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nhead b {
+  font-weight: 600;
+  color: var(--hi);
+}
+
+.nhead .num {
+  color: var(--dim);
+}
+
+.nhead .close {
+  display: none;
+}
+
+.ib.sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--dim);
+}
+
+.nlist {
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 2px;
+}
+
+.nlist li {
+  padding: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.nlist li:hover {
+  background: var(--accented);
+}
+
+.nlist .pin {
+  margin-top: -1px;
+}
+
+.ntext {
+  flex: 1;
+  min-width: 0;
+}
+
+.ntext p {
+  color: var(--hi);
+  overflow-wrap: anywhere;
+}
+
+.ntext span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.nlist .ib.sm {
+  margin: -4px -4px 0 0;
+}
+
+.nhint {
+  margin: 12px 16px 0;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.nfoot {
+  margin-top: auto;
+  padding: 12px 16px 16px;
+}
+
+.btn.wide {
+  width: 100%;
+  justify-content: center;
+}
+
+.btn.done {
+  color: var(--ok);
+}
+
+/* ---------- phone: the list and the note box are sheets ---------- */
+
+@media (max-width: 640px) {
+  .npanel {
+    position: absolute;
+    z-index: 4;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 65%;
+    border-radius: 16px 16px 0 0;
+    box-shadow: var(--pop);
+  }
+
+  .nhead .close {
+    display: grid;
+  }
+
+  .nbox {
+    position: fixed;
+    left: 8px !important;
+    right: 8px;
+    top: auto !important;
+    bottom: 8px;
+    width: auto;
+  }
+
+  .vbody:has(.npanel:not([hidden])) ~ .stepper,
+  .vbody:has(.nbox) ~ .stepper {
+    display: none;
+  }
+}

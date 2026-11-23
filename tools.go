@@ -150,8 +150,9 @@ func (s *Server) getProject(ctx context.Context, in slugIn) ([]mcp.Content, erro
 		Share  string            `json:"share,omitempty"` // the public link, when there is one
 		Memory string            `json:"memory"`
 		Shared map[string]string `json:"shared,omitempty"` // memories named in a "uses:" line
+		Notes  string            `json:"notes,omitempty"`  // what the user pinned in the viewer
 		List   []ver             `json:"list"`
-	}{Project: p, Memory: s.store.ReadMemory(in.Slug)}
+	}{Project: p, Memory: s.store.ReadMemory(in.Slug), Notes: s.notes.AgentNotes(in.Slug)}
 	out.Shared = s.store.Shared(out.Memory)
 	if id := s.shares.All()[in.Slug]; id != "" {
 		out.Share = s.cfg.URL + sharePath(id)

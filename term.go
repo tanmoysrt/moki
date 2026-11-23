@@ -154,8 +154,8 @@ func (a *Activity) Disk(slug, ver string, gone bool) {
 }
 
 // Browser logs a change made in the moki page.
-func (a *Activity) Browser(text string) {
-	a.line(dim(pad("browser", whoWidth)), green(pad("token", toolWidth)), text)
+func (a *Activity) Browser(what, text string) {
+	a.line(dim(pad("browser", whoWidth)), green(pad(what, toolWidth)), text)
 }
 
 // Warn logs a problem that moki can live with.

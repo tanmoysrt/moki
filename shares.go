@@ -188,7 +188,7 @@ func (s *Server) apiSetShare(w http.ResponseWriter, r *http.Request) {
 	if in.Public {
 		state = "public"
 	}
-	activity.Browser("made " + slug + " " + state)
+	activity.Browser("share", "made "+slug+" "+state)
 	writeJSON(w, r, struct {
 		Share string `json:"share"`
 	}{sharePath(id)})

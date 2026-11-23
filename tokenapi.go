@@ -34,7 +34,7 @@ func (s *Server) apiMakeToken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	activity.Browser("made the token " + tok.Name)
+	activity.Browser("token", "made the token "+tok.Name)
 	writeJSON(w, r, struct {
 		Name string `json:"name"`
 		Text string `json:"text"`

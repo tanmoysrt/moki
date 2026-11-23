@@ -1,7 +1,8 @@
 moki: guide for agents
 
-moki is a local viewer for UI mockups. You write plain HTML, CSS and JS. The user opens it in the browser.
-moki does not decide how a mockup looks. You decide. moki stores, serves, screenshots and remembers.
+moki is a local viewer for mockups: screens, decks, short videos, diagrams and art. You write plain
+HTML, CSS and JS. The user opens it in the browser, leaves notes and exports the files.
+moki does not decide how a mockup looks. You decide. moki stores, serves, screenshots, exports and remembers.
 
 URL in this guide: http://127.0.0.1:9999. If the user gave you another moki URL, use that one.
 
@@ -24,6 +25,7 @@ Rules
   ~/.moki/<slug>/v1/index.html     one folder per version
   ~/.moki/<slug>/v2/index.html
   ~/.moki/memory/<slug>.md         what you remember about the project
+  ~/.moki/notes/<slug>.json        the user's notes and the approved version. The viewer writes it
 
 - A slug is lowercase letters, digits and "-". For example: team-page.
 - A version is one round of ideas. It can hold as many mockups as you want.
@@ -35,11 +37,12 @@ Rules
 
 3. Tools
 
-  list_projects                       all projects
-  get_project(slug)                   versions, files and memory: call it before you work on a project
+  list_projects(query?, all?)         the 30 newest projects, or the ones that match the query
+  get_project(slug)                   versions, files, memory and notes: call it before you work on a project
   upload(slug, files | dir, ...)      make a version
   screenshot(slug, ...)               see your work
   download_project(slug, version?)    get the files back
+  export(slug, format, page?, ...)    a PDF, MP4, PNG or SVG of a page
   share(slug, public)                 a link with no password. Only when the user asks
   list_memory(query?)                 the memory files, or a search of every memory
   read_memory(slug), write_memory(slug, content, append?)
@@ -52,6 +55,11 @@ upload:
   To use an image from a local app, save it to a file and upload it.
 - dir: a folder on the moki machine. Use this when you run on the same machine: write the files to disk,
   then upload the folder in one call.
+- On another machine with a shell, send the folder over HTTP. No file goes through your context:
+    tar -cz -C mockup . | curl -sS --data-binary @- -H "Authorization: Bearer $TOKEN" \
+      "http://127.0.0.1:9999/api/upload/<slug>?base=v3"
+  The token is the one in your MCP settings. Query: base, version, delete (repeat it), check=1 for
+  the sheet. Then call screenshot to see it.
 - base: "v2" starts from v2. Then send only the files that changed. delete: ["old.html"] removes files.
 - version: "v2" replaces v2 for a small fix. Without it, moki makes the next version.
 - The reply has the viewer URL, warnings, and a desktop and phone sheet of index.html. Read them and fix
@@ -59,15 +67,74 @@ upload:
 
 screenshot:
 - versions: "v3", ["v2", "v3"] or "all". Default: the newest.
-- pages: ["index.html", "b.html"] or "all".
-- sizes: desktop, laptop, tablet, phone, phone-landscape, or "WxH". Default: desktop and phone.
+- pages: ["index.html", "b.html", "page.html?v=a"] or "all".
+- sizes: desktop, laptop, tablet, phone, phone-landscape, slide (1280x720), square, story, or "WxH".
+  Default: desktop and phone.
 - themes: "light", "dark" or "both". Default: light.
 - full: true takes the whole page, also when an inner element scrolls.
 - selector: one element, for example "#option-b".
 - One call takes up to 48 shots. They come back on one labeled sheet. sheet: false returns them one by one.
 
+Viewer URLs: http://127.0.0.1:9999/#/p/<slug>/v3 opens index.html. Add a page to open it:
+#/p/<slug>/v3/page.html?v=a. Send that link when you want the user to look at one screen.
 
-4. Memory
+
+4. Decks, videos, diagrams and art
+
+A mockup can be any content that HTML can show. Three scripts in /kit do the hard parts. The comment at
+the top of each script has the full list of options. Each script sets window.moki, so the viewer and
+the export know what the page is.
+
+Deck: <script src="/kit/deck.js"></script> at the end of <body>.
+  <main class="deck" data-footer="Pitch · June">
+    <section class="title"><h1>Title</h1><p>One line</p><small>Date</small></section>
+    <section class="stats"><h2>Title</h2><ul><li><strong>87</strong>projects</li>...</ul></section>
+  </main>
+- Each <section> is a slide of 1280x720. data-size="1080x1080" on .deck sets another size.
+- Layouts, as a class on the section: title (h1, p, small), split (two children), cards (h2, p, ul > li
+  with i, b and text), stats (h2, ul > li with strong), steps (h2, ol > li with b), compare (h2, two divs
+  with h3 and ul), quote (blockquote, cite), full (an svg or image fills the slide).
+- Page CSS wins over the layouts. --deck-accent on .deck sets the accent color.
+- Keys: arrows, G shows all slides, F full screen. ?s=3 opens slide 3.
+
+Video: a scene in <div class="stage">, then
+  <script>VIDEO = { size: '1280x720', duration: 8, fps: 30, draw(t) { /* set the scene for time t */ } }</script>
+  <script src="/kit/video.js"></script>
+- draw(t) must depend only on t: no CSS animation, timer or random value. Then any frame shows at any
+  time, and the MP4 export gets every frame.
+- video.span(t, from, to) goes from 0 to 1 between two times, eased. video.lerp(a, b, p) mixes numbers.
+- ?t=2.5 shows the frame at 2.5 s with no controls. Use it with screenshot.
+
+Diagram or art: <script src="/kit/sketch.js"></script>, then
+  const s = sketch(document.querySelector('svg'), { seed: 7 })
+  s.box(40, 40, 160, 72, { label: 'Agent', fill: '#fde68a' }); s.arrow(200, 76, 320, 76, { label: 'upload' })
+- Shapes: line, arrow, box, circle, poly, curve, text. The same seed draws the same lines.
+- Hand-drawn text uses the Caveat font: load it from Google Fonts. clean: true draws straight lines
+  in the page font.
+
+Export: the viewer has an Export button (E). The export tool makes the same files:
+  any page    png (full height, 2x), pdf (one long page), files (.tar.gz of the version)
+  deck        pdf (a page for each slide), zip (a PNG of each slide), png of one slide
+  video       mp4, png of one frame. The MP4 needs ffmpeg on the moki machine. Up to 60 s
+  drawing     svg of the biggest svg on the page
+- export(slug, format, version?, page?, theme?, slide?, time?, dir?). The file comes back as a resource
+  of up to 20 MB. dir writes it on the moki machine instead.
+- Use it when the user asks for the file, for example "send me the deck as PDF".
+
+
+5. Notes and approval
+
+The user can leave notes in the viewer: with the notes list open, a click on the page pins a note on
+that spot. The user can also approve a version there.
+- get_project returns them in "notes": the approved version, then each note with its version, page,
+  the element that the user clicked and a CSS path to it, and the text.
+- Read the notes each round, and do what they say in the next version. The CSS path finds the element.
+- When the user says "I left notes" or "see my notes", call get_project.
+- The approved version is the one to build. Write it to the memory too.
+- You cannot write notes. Answer them in your reply and in the memory.
+
+
+6. Memory
 
 A new chat does not know the earlier rounds. The memory tells it. Each project has one markdown file,
 ~/.moki/memory/<slug>.md. moki only stores it. You write it and you read it.
@@ -96,14 +163,21 @@ Write:
   first, and keep each decision.
 - Never write tokens, passwords or other secrets.
 
+Shared memory: rules for many projects, for example the house style of one product.
+- Write them to a memory of their own, for example write_memory("csema", ...): the fonts, the tokens,
+  the components, what the user always asks for.
+- Add a line "uses: csema" to the memory of each project that follows it. get_project then returns
+  the shared memory in "shared". Names are split by commas or spaces: "uses: csema, admin".
 
-5. Each round
 
-1. For a project that exists, call get_project. Read the memory and the newest version.
+7. Each round
+
+1. For a project that exists, call get_project. Read the memory, the shared memory, the notes and the
+   newest version.
    For a new project, search the memory with list_memory and query, and look at the user's product
    first. The design skill says how.
 2. Make the mockups. Follow the design skill.
-3. Upload: with base and only the changed files, or with dir.
+3. Upload: with base and only the changed files, with dir, or with tar over HTTP.
 4. Read the sheet and the warnings. Fix and upload again with version until it looks right.
 5. Call screenshot with themes: "both". Add full: true for long pages.
 6. Call write_memory with append: true. Write the brief, the decisions and the feedback of this round.

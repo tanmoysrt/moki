@@ -9,7 +9,8 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-const instructions = `moki stores UI mockups and shows them in the browser. You write plain HTML, CSS and JS.
+const instructions = `moki stores mockups and shows them in the browser: screens, decks, short videos, diagrams and art.
+You write plain HTML, CSS and JS. /kit/deck.js, /kit/video.js and /kit/sketch.js help with the last four (see the guide).
 moki does not decide how a mockup looks: it shows the version index.html as you made it.
 
 Rules:
@@ -21,10 +22,12 @@ Rules:
   Do not work from what you remember of an earlier chat.
 
 Each round:
-1. get_project(slug) before you work on a project. It has the memory of past rounds.
+1. get_project(slug) before you work on a project. It has the memory of past rounds, and the notes
+   and approval that the user left in the viewer. Do what the notes say.
    For a new project: search the memory with list_memory and query, and look at the user's product first.
 2. Follow the design skill (resource moki://design-skill).
-3. upload a new version. Use base with only the changed files, or dir when you run on the moki machine.
+3. upload a new version. Use base with only the changed files, dir when you run on the moki machine,
+   or tar over HTTP from another machine (the guide has the curl line).
    Give index.html a <title> (the project title) and <meta name="description"> (what is new in this round).
 4. Read the sheet and the warnings that upload returns. Fix them with upload version: "vN".
 5. screenshot with themes: "both", and full: true for long pages.

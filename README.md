@@ -8,7 +8,7 @@
 <h1 align="center">moki</h1>
 
 <p align="center">
-  A home for the UI mockups your coding agent makes.<br>
+  A home for the mockups your coding agent makes: screens, decks, short videos, diagrams and art.<br>
   Review each version in your browser, before the agent writes the real code.
 </p>
 
@@ -29,6 +29,7 @@
 - **Mockup first.** Your agent shows you the screen before it touches the real code.
 - **Every round is a version.** Step through v1, v2 and v3 and compare them at the same scroll spot.
 - **Live.** The page updates the moment the agent uploads.
+- **Any content.** Ask for a deck, a 10-second video or a diagram, and export it as PDF, MP4, PNG or SVG.
 - **Agents check their own work.** They screenshot each version, and remember your feedback per project.
 - **Any agent.** Claude Code, Codex, Cursor, OpenCode, Antigravity, or any tool that speaks MCP.
 
@@ -51,7 +52,7 @@ curl -fsSL https://raw.githubusercontent.com/tanmoysrt/moki/develop/install.sh |
 moki --bg
 ```
 
-Open http://127.0.0.1:9999. Screenshots need Chrome or Chromium on the machine.
+Open http://127.0.0.1:9999. Screenshots and exports need Chrome or Chromium on the machine, and MP4 export needs ffmpeg.
 
 ## Connect an agent
 
@@ -72,11 +73,15 @@ Ask your agent for a mockup:
 
 The agent uploads it to moki and sends you the link. Tell it what you think, and the next round arrives as a new version.
 
+To point at one spot, press <kbd>N</kbd> in the viewer and click the page: the note is pinned there, and the agent reads it in the next round. Approve the version you want built from the same list.
+
+Press <kbd>E</kbd> for Export: PNG and PDF of any page, PDF and slide images of a deck, MP4 of a video and SVG of a drawing. moki makes the file in its own Chrome. MP4 needs ffmpeg; the Docker image has it.
+
 <p align="center">
   <img src=".github/assets/viewer.png" alt="A profile page mockup in the moki viewer" width="100%">
 </p>
 
-<kbd>←</kbd> <kbd>→</kbd> step versions · <kbd>Esc</kbd> back to projects · <kbd>/</kbd> search
+<kbd>←</kbd> <kbd>→</kbd> step versions · <kbd>N</kbd> notes · <kbd>E</kbd> export · <kbd>Esc</kbd> back to projects · <kbd>/</kbd> search
 
 <details>
 <summary><b>Commands</b></summary>

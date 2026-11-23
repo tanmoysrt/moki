@@ -1,6 +1,6 @@
 ---
 name: moki-design
-description: How to design UI mockups for moki: taste, page layout, real-looking data and self-review. Read before you make or change a mockup in moki.
+description: How to design mockups for moki: screens, decks, short videos, diagrams and art. Taste, page layout, real-looking data and self-review. Read before you make or change a mockup in moki.
 ---
 
 # moki design skill
@@ -12,8 +12,9 @@ Mockup first: before you change UI, refactor a screen or design a new page, make
 ## Before you start
 
 1. Search the memory: `list_memory` with a `query` for this kind of screen or part, for example "table" or "invite". Follow what the user decided before. For a project that exists, `get_project` gives you its memory.
-2. Look at the user's product. Open the screens near the one you design, or read the codebase: design tokens, components, fonts, icon set. Match them, unless the brief asks for something new.
-3. When the brief leaves the main question open, ask the user one short question before you design.
+2. Look at the user's product. Open the screens near the one you design, or read the codebase: design tokens, components, fonts, icon set. Match them, unless the brief asks for something new. A project memory with a `uses:` line points to the shared rules of the product.
+3. To start from a real page, save it as static HTML with its CSS and images, and change that copy. Never use a screenshot of it as the mockup.
+4. When the brief leaves the main question open, ask the user one short question before you design.
 
 ## The target
 
@@ -33,6 +34,8 @@ Mockup first: before you change UI, refactor a screen or design a new page, make
 - Inner radius = outer radius minus the padding between them.
 - At most one primary button per screen. Put it where the task continues, not in the header.
 - Outline icons with a thin stroke, in square tiles with a rounded corner.
+- Controls of one kind have the same height, padding and radius on every screen. Check this across the options too.
+- No control that shows only on hover, and no motion on hover. The user must see every action, also on a phone.
 - Motion: fade and a small translate. Never animate the size of text that the user reads.
 - Phone: 16px side gutter, no sideways scroll, touch targets of 40px or more.
 
@@ -72,6 +75,29 @@ window.BOARD = {
 
 `board.js` shows only the phone frames on a phone, and it follows the moki theme. It has no theme button. You can also make your own page: a switcher, tabs, one long screen. Pick what makes the choice easy.
 
+## Decks, videos, diagrams and art
+
+A mockup can be anything that HTML can show. The scripts in `/kit` do the hard parts, and the guide shows their HTML. The rules above apply too.
+
+Deck (`/kit/deck.js`):
+- One idea for each slide, in a title of 8 words or less. A slide is not a page of text: at most 5 points.
+- Use the layouts: `title`, `split`, `cards`, `stats`, `steps`, `compare`, `quote`, `full`. Change them with page CSS when the brand needs it.
+- Use real numbers when you have them, and say where they come from. Do not make up numbers for a real company.
+- Start and end with a `title` slide. Use `data-footer` for the name of the deck.
+- Check with `screenshot` at size `slide`, and look at every slide with `?s=N`. Look for empty slides and text that overflows.
+
+Video (`/kit/video.js`):
+- 5 to 20 seconds, one message. Plan it in scenes, for example 0–2 s the title, 2–5 s the product.
+- `draw(t)` depends only on `t`. No CSS animation, timer or random value, or the MP4 loses frames.
+- Ease the moves with `video.span`. Hold each text long enough to read: about 1 second for 3 words.
+- Check frames with `?t=1`, `?t=4` and so on, and send the user the viewer URL to watch it play.
+
+Diagram and art (`/kit/sketch.js`):
+- Hand-drawn for ideas and early flows. `clean: true` for diagrams that go into docs.
+- Few shapes, few colors, short labels. Arrows show the order: left to right or top to bottom.
+- Give each drawing a fixed `seed`, so screenshots do not change between versions.
+- Put the drawing in one `<svg>` with a `viewBox`, so the SVG export has all of it.
+
 ## Theme
 
 - Do not add a light/dark toggle to your page. The moki bar has one, and it switches your page too.
@@ -90,9 +116,10 @@ window.BOARD = {
 ## Check your work
 
 1. Upload, then read the sheet and the warnings that come back.
-2. Call `screenshot` with sizes desktop and phone and `themes: "both"`. Add `full: true` for long pages.
+2. Call `screenshot` with sizes desktop and phone and `themes: "both"`. Add `full: true` for long pages. For a deck or a video, use size `slide`.
 3. Check each screen:
    - One primary button. No eyebrow, no repeated fact, no card in a card.
+   - Buttons, inputs and bars have the same height and padding on every screen.
    - Color only for meaning. Radius and inset line up.
    - No sideways scroll on the phone. Long text truncates.
    - Empty, loading and error states exist when the screen needs them.
@@ -100,8 +127,9 @@ window.BOARD = {
 
 ## Rounds
 
-- Read the memory before each round. It has the brief and the decisions of earlier chats.
+- Read the memory and the notes before each round (`get_project`). The notes are pinned on the page: each says which element the user means.
 - Each round of feedback is a new version.
 - Keep the options that the user liked. Drop the ones the user rejected.
+- When the user makes the same complaint for 2 or 3 rounds, small changes do not work. Offer new layouts instead.
 - Do not change a version that the user approved.
 - Write the decisions to memory with `write_memory` and `append: true`: the feedback, what you kept, what the user rejected, and the approved version. The guide has more on memory.

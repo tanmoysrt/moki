@@ -1,6 +1,6 @@
 ---
 name: moki-design
-description: How to design mockups for moki: screens, decks, short videos, diagrams and art. Taste, page layout, real-looking data and self-review. Read before you make or change a mockup in moki.
+description: "How to design mockups for moki: screens, decks, short videos, diagrams and art. Taste, page layout, real-looking data and self-review. Read before you make or change a mockup in moki."
 ---
 
 # moki design skill

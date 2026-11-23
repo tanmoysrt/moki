@@ -20,6 +20,9 @@ const app = {
   linkFade: false, // the card fades in when it opens, not on each render
   sharing: false, // the public switch waits for moki
   notesOpen: false, // the notes list in the viewer
+  exportOpen: false, // the export menu in the viewer
+  exportFade: false,
+  job: null, // the export that moki makes: {format, kit, done, id, error}
   draft: null, // a note the user types, on the spot they clicked
   down: false, // moki does not answer
   homeScroll: 0,
@@ -52,6 +55,7 @@ async function route() {
   if (prev.name === 'home' && next.name === 'view') app.homeScroll = scrollY
   app.route = next
   if (next.slug !== prev.slug) app.linkOpen = false
+  app.exportOpen = false
   app.draft = null
 
   if (next.name === 'view' && !app.down) {
@@ -210,6 +214,9 @@ const actions = {
   public: togglePublic,
   notes: toggleNotes,
   approve,
+  export: toggleExport,
+  exportAs,
+  stopExport,
 }
 
 async function copy(button) {
@@ -235,10 +242,11 @@ function copyWithSelection(text) {
 
 document.addEventListener('click', (e) => {
   if (app.linkOpen && !e.target.closest('.pop, [data-act="link"]')) toggleLink() // a click outside the card
+  if (app.exportOpen && !e.target.closest('.xmenu, [data-act="export"]')) toggleExport()
   const target = e.target.closest('[data-act], [data-ver], [data-step], [data-copy]')
   if (!target) return
   if (target.classList.contains('scrim') && e.target !== target) return // a click inside the dialog
-  if (target.dataset.act) actions[target.dataset.act]()
+  if (target.dataset.act) actions[target.dataset.act](target)
   else if (target.dataset.ver) location.hash = viewerHash(app.route.slug, target.dataset.ver, app.route.page)
   else if (target.dataset.step) step(Number(target.dataset.step))
   else if (target.dataset.copy) copy(target)
@@ -255,6 +263,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (app.dialog) return actions.close()
     if (app.linkOpen) return toggleLink()
+    if (app.exportOpen) return toggleExport()
     if (app.draft) return cancelDraft()
     if (typing) return e.target.blur()
     if (app.notesOpen) return toggleNotes()
@@ -272,9 +281,16 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowLeft') step(-1)
   if (e.key === 'ArrowRight') step(1)
   if (e.key === 'n' && !share) toggleNotes()
+  if (e.key === 'e' && !share) toggleExport()
 })
 
 addEventListener('hashchange', route)
+
+// A click in the page goes to its frame, not to this document, so the menus close on blur.
+addEventListener('blur', () => {
+  if (app.linkOpen) toggleLink()
+  if (app.exportOpen) toggleExport()
+})
 
 // ---------- helpers ----------
 

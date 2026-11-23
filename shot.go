@@ -56,8 +56,11 @@ func (s *Shooter) Capture(ctx context.Context, shots []Shot) ([]Result, error) {
 func (s *Shooter) Batch(ctx context.Context, fn func(*Batch) error) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	ctx, cancel := context.WithTimeout(ctx, batchTimeout)
-	defer cancel()
+	if _, ok := ctx.Deadline(); !ok { // an export sets a longer deadline
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, batchTimeout)
+		defer cancel()
+	}
 	opts := append(chromedp.DefaultExecAllocatorOptions[:], chromedp.Flag("hide-scrollbars", true), chromedp.Flag("mute-audio", true))
 	if p := os.Getenv("CHROME"); p != "" {
 		opts = append(opts, chromedp.ExecPath(p))

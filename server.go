@@ -30,6 +30,7 @@ type Server struct {
 	notes  *NoteStore
 	shots  *Shooter
 	thumbs *Thumbs
+	jobs   *exportJobs
 	mux    *http.ServeMux
 }
 
@@ -72,6 +73,7 @@ func (s *Server) routes() {
 	s.shareRoutes()
 	s.pushRoutes()
 	s.noteRoutes()
+	s.exportRoutes()
 }
 
 // ServeHTTP adds no-cache to every response and checks basic auth.

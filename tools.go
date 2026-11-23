@@ -70,6 +70,7 @@ func (s *Server) addTools(srv *mcp.Server) {
 		"Get the files of a version, or of the whole project, as .tar.gz (up to 20 MB). "+
 			"With dir, write them into that folder on the moki machine instead.",
 		s.download)
+	addTool(s, srv, "export", exportDesc, s.export)
 	addTool(s, srv, "share", shareDesc, s.share)
 	addTool(s, srv, "list_memory",
 		"List the memory files: slug, time and first line. With query, search every memory instead: "+

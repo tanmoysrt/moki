@@ -1,4 +1,4 @@
-# moki with Chromium, so screenshots work.
+# moki with Chromium and ffmpeg, so screenshots and exports work.
 #
 #   docker run -d --name moki -p 9999:9999 -v moki:/data -e TZ=Asia/Kolkata ghcr.io/tanmoysrt/moki
 #   docker exec moki moki token register
@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -trimpath -ldflags "-s -w -X main.version=$VERSION" -o /moki .
 
 FROM alpine:3.22
-RUN apk add --no-cache chromium font-noto font-noto-emoji tzdata \
+RUN apk add --no-cache chromium ffmpeg font-noto font-noto-emoji tzdata \
  && adduser -D moki \
  && mkdir /data \
  && chown moki /data

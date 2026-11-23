@@ -25,7 +25,7 @@ function viewerBar() {
     <a class="ib" href="${pageURL(slug, ver, app.route.page)}" target="_blank" aria-label="Open in a new tab" title="Open in a new tab">
       ${icon('ext')}
     </a>
-    ${share ? '' : notesButton()}`
+    ${share ? '' : exportButton() + notesButton()}`
 }
 
 // padlock says if the project is public. Its card has a switch that turns the public

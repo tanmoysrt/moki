@@ -1,0 +1,138 @@
+/* The export menu in the viewer bar. */
+
+.xwrap {
+  position: relative;
+  display: flex;
+}
+
+.xmenu {
+  position: absolute;
+  z-index: 5;
+  top: 40px;
+  right: 0;
+  width: 304px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--pop);
+}
+
+.xmenu.fade {
+  animation: fadein 0.15s ease;
+}
+
+.xrow {
+  width: 100%;
+  min-height: 52px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 10px;
+  text-align: left;
+}
+
+button.xrow:hover,
+.xrow.making {
+  background: var(--accented);
+}
+
+.xrow .tile {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--accented);
+  color: var(--hi);
+}
+
+button.xrow:hover .tile,
+.xrow.making .tile {
+  background: var(--card);
+}
+
+.xrow.making .tile {
+  color: var(--live);
+}
+
+.xrow .what {
+  flex: 1;
+  min-width: 0;
+}
+
+.xrow b {
+  display: block;
+  font-weight: 500;
+  color: var(--hi);
+}
+
+.xrow span {
+  display: block;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--dim);
+}
+
+.xrow .err {
+  color: var(--danger);
+}
+
+.xrow .stop {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.xprog {
+  margin-top: 6px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.xprog i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--live);
+  transition: width 0.3s;
+}
+
+.xline {
+  height: 1px;
+  margin: 6px 8px;
+  background: var(--border);
+}
+
+.xscrim {
+  display: none;
+}
+
+/* on a phone the menu is a sheet at the bottom */
+@media (max-width: 640px) {
+  .xmenu {
+    position: fixed;
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    padding: 8px;
+    border-radius: 16px;
+  }
+
+  .xscrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    background: var(--scrim);
+  }
+
+  .viewer:has(.xmenu) .stepper {
+    display: none;
+  }
+}

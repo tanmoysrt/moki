@@ -11,7 +11,8 @@ import (
 )
 
 const shotDesc = `Take screenshots of a project: every combination of versions, pages, sizes and themes, up to 48 shots.
-Sizes: desktop 1280x800, laptop 1440x900, tablet 834x1194, phone 390x844, phone-landscape 844x390, or "WxH".
+Sizes: desktop 1280x800, laptop 1440x900, tablet 834x1194, phone 390x844, phone-landscape 844x390,
+slide 1280x720 (decks, videos), square 1080x1080, story 1080x1920, or "WxH".
 full: true takes the whole page, also when an inner element scrolls. Do not send a large height for that.
 More than one shot comes back as one labeled sheet. Each shot also has the URL of its full-size PNG.`
 
@@ -31,6 +32,7 @@ const maxShots = 48
 var sizeNames = map[string][2]int{
 	"desktop": {1280, 800}, "laptop": {1440, 900}, "tablet": {834, 1194},
 	"phone": {390, 844}, "phone-landscape": {844, 390},
+	"slide": {1280, 720}, "square": {1080, 1080}, "story": {1080, 1920},
 }
 
 var sizeRe = regexp.MustCompile(`^(\d{2,4})x(\d{2,5})$`)
@@ -188,7 +190,7 @@ func parseSizes(names []string) ([]size, error) {
 		}
 		m := sizeRe.FindStringSubmatch(n)
 		if m == nil {
-			return nil, fmt.Errorf("size %q is not valid. Use desktop, laptop, tablet, phone, phone-landscape or WxH such as 1280x800", n)
+			return nil, fmt.Errorf("size %q is not valid. Use desktop, laptop, tablet, phone, phone-landscape, slide, square, story or WxH such as 1280x800", n)
 		}
 		w, _ := strconv.Atoi(m[1])
 		h, _ := strconv.Atoi(m[2])

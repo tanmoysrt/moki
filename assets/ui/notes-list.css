@@ -2,6 +2,8 @@
    agent's replies, and the foot with Approve, or the name of a visitor of a public link. */
 
 .npanel {
+  position: relative;
+  z-index: 3; /* over the pins layer */
   width: 320px;
   flex: none;
   display: flex;
@@ -208,4 +210,54 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--live);
+}
+
+/* ---------- kept options ---------- */
+
+.ngroup.lead {
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.kept {
+  padding: 0 8px;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+.kept li {
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+}
+
+.kept .tag {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--live);
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.kept a.ntext {
+  color: inherit;
+  text-decoration: none;
+}
+
+.kept li:has(a.ntext):hover {
+  background: var(--accented);
+}
+
+.kept .ntext span {
+  margin-top: 0;
 }

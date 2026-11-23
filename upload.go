@@ -20,6 +20,9 @@ const uploadDesc = `Save a version of a project. Without version, moki makes the
 Follow the design skill (moki://design-skill). Read it in this chat before your first upload.
 Send files, or dir when you run on the moki machine. base: "v3" copies v3 first, so you send only the changed files; delete removes paths from it.
 version: "v3" replaces v3 for a small fix: then base defaults to v3.
+options: for a round with many ideas, the parts and their options. The viewer shows them as a grid, opens each one at full size,
+and the user keeps the ones for the next round. 5 or more options for each part in the first round.
+moki refuses an upload with options that do not fit, a file that is not part of a web page, or a file above 10 MB. Nothing is saved then.
 moki returns the viewer URL, warnings and a sheet of index.html at desktop and phone size. Fix the warnings with version.`
 
 type fileIn struct {
@@ -31,11 +34,12 @@ type fileIn struct {
 type uploadIn struct {
 	Slug    string   `json:"slug" jsonschema:"project slug: lowercase letters, digits and -, for example team-page"`
 	Files   []fileIn `json:"files,omitempty" jsonschema:"the files to write"`
-	Dir     string   `json:"dir,omitempty" jsonschema:"absolute folder on the moki machine to copy as the version. Symlinks and .git are skipped"`
+	Dir     string   `json:"dir,omitempty" jsonschema:"absolute folder on the moki machine to copy as the version. Symlinks and hidden files are skipped"`
 	Base    string   `json:"base,omitempty" jsonschema:"a version to copy first, for example v3"`
 	Delete  []string `json:"delete,omitempty" jsonschema:"paths to remove after the copy of base"`
 	Version string   `json:"version,omitempty" jsonschema:"an existing version to replace, for a small fix"`
 	Check   *bool    `json:"check,omitempty" jsonschema:"take a desktop and phone sheet of index.html. Default true"`
+	Options *Options `json:"options,omitempty" jsonschema:"the parts and options of the round. moki saves them as options.json"`
 }
 
 var uploadMu sync.Mutex
@@ -44,7 +48,7 @@ func (s *Server) upload(ctx context.Context, in uploadIn) ([]mcp.Content, error)
 	if err := checkSlug(in.Slug); err != nil {
 		return nil, err
 	}
-	if len(in.Files) == 0 && in.Dir == "" && in.Base == "" && in.Version == "" {
+	if len(in.Files) == 0 && in.Dir == "" && in.Base == "" && in.Version == "" && in.Options == nil {
 		return nil, fmt.Errorf("nothing to save. Send files, dir or base")
 	}
 	uploadMu.Lock()
@@ -99,8 +103,15 @@ func (s *Server) write(in uploadIn) (string, error) {
 	if err := os.Mkdir(tmp, 0o755); err != nil {
 		return "", err
 	}
+	files := incomingProblems(in)
 	if err := s.fill(tmp, in); err != nil {
 		return "", err
+	}
+	if err := writeOptions(tmp, in.Options); err != nil {
+		return "", err
+	}
+	if opts := optionProblems(tmp); len(files)+len(opts) > 0 {
+		return "", refused(files, opts)
 	}
 	final := s.store.VersionDir(in.Slug, ver)
 	if _, err := os.Stat(final); err == nil {
@@ -224,11 +235,16 @@ func (s *Server) pageWarnings(slug, ver string, files []string) []string {
 	}
 	var out []string
 	for _, f := range files {
-		if hasLocalURL(filepath.Join(s.store.VersionDir(slug, ver), f)) {
+		path := filepath.Join(s.store.VersionDir(slug, ver), f)
+		if hasLocalURL(path) {
 			out = append(out, f+": a URL points at localhost or 127.0.0.1. It breaks on other machines and public links. "+
 				"Upload the file with the mockup and use a relative path")
 		}
+		if hasRemoteScript(path) {
+			out = append(out, f+": loads a script from another site. It breaks offline and in exports. Upload the script with the mockup")
+		}
 	}
+	out = append(out, s.optionWarnings(slug, ver)...)
 	// moki reads the title and the note only from index.html.
 	title, desc := pageMeta(filepath.Join(s.store.VersionDir(slug, ver), "index.html"))
 	if title == "" {

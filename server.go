@@ -161,23 +161,28 @@ func (s *Server) apiProject(w http.ResponseWriter, r *http.Request) {
 }
 
 // writeProject sends a project with its versions. A public link gets the notes only when
-// people with the link can leave notes. shareNotes is the state of that switch.
+// people with the link can leave notes. shareNotes is the state of that switch. Without
+// the notes, it gets the kept options, so visitors see what the user keeps.
 func (s *Server) writeProject(w http.ResponseWriter, r *http.Request, slug, share string, notes *ProjectNotes) {
 	p, vers, err := s.store.Project(slug)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	var kept map[string][]KeptOption
 	if notes != nil {
 		notes = notes.public()
+	} else {
+		kept = s.notes.Read(slug).Kept
 	}
 	writeJSON(w, r, struct {
 		Project
-		Share      string        `json:"share,omitempty"`
-		ShareNotes bool          `json:"shareNotes,omitempty"`
-		List       []Version     `json:"list"`
-		Notes      *ProjectNotes `json:"notes,omitempty"`
-	}{p, share, s.shares.Notes(slug), vers, notes})
+		Share      string                  `json:"share,omitempty"`
+		ShareNotes bool                    `json:"shareNotes,omitempty"`
+		List       []Version               `json:"list"`
+		Notes      *ProjectNotes           `json:"notes,omitempty"`
+		Kept       map[string][]KeptOption `json:"kept,omitempty"`
+	}{p, share, s.shares.Notes(slug), vers, notes, kept})
 }
 
 func (s *Server) serveThumb(w http.ResponseWriter, r *http.Request) {

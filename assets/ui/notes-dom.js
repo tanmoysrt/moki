@@ -69,7 +69,7 @@ function cssPath(el) {
 // framePath is cssPath through the frames of the page: "iframe:nth-of-type(2) >>> button".
 function framePath(el) {
   const parts = [cssPath(el)]
-  for (let f = el.ownerDocument.defaultView.frameElement; f && f !== shownFrame(); f = f.ownerDocument.defaultView.frameElement) {
+  for (let f = el.ownerDocument.defaultView.frameElement; f && f.ownerDocument !== document; f = f.ownerDocument.defaultView.frameElement) {
     parts.unshift(cssPath(f))
   }
   return parts.join(' >>> ')
@@ -78,7 +78,7 @@ function framePath(el) {
 // inFrame names the frame page of el, so the agent knows which option the user means.
 function inFrame(el) {
   const frame = el.ownerDocument.defaultView.frameElement
-  return frame && frame !== shownFrame() ? ` in ${frame.getAttribute('src') || 'a frame'}` : ''
+  return frame && frame.ownerDocument !== document ? ` in ${frame.getAttribute('src') || 'a frame'}` : ''
 }
 
 const round = (v) => Math.round(Math.min(1, Math.max(0, v)) * 1000) / 1000

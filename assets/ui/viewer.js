@@ -6,8 +6,9 @@ function viewer() {
   return `<div class="viewer">
     <div class="vbar">${viewerBar()}</div>
     <div class="vbody">
-      <div class="canvas">${pageFrame()}<div class="pins"></div></div>
+      <div class="canvas">${gridMode() ? optionGrid() : pageFrame()}</div>${splitOn() ? phonePane() : ''}
       ${canNote() ? '<aside class="npanel" hidden></aside>' : ''}
+      <div class="pins"></div>
     </div>
     <div class="stepper num">${stepper()}</div>
   </div>`
@@ -18,10 +19,10 @@ function viewerBar() {
   const { title, list, share: link } = app.detail[slug]
   return `${share ? `<span class="mark">${LOGO}</span>` : `<a class="ib" href="#/" aria-label="Back" title="Back (Esc)">${icon('back')}</a>`}
     <div class="vtitle trunc">${esc(title || slug)}</div>
-    ${list.length > 1 ? `<div class="vers num">${list.slice().reverse().map(pill).join('')}</div>` : ''}
+    ${list.length > 1 ? `<div class="vers num">${list.slice().reverse().map(pill).join('')}</div>` : ''}${optionNav()}
     <div class="sp"></div>
     ${share ? '' : padlock(slug, link)}
-    ${themeButton()}
+    ${splitButton()}${themeButton()}
     <a class="ib" href="${pageURL(slug, ver, app.route.page)}" target="_blank" aria-label="Open in a new tab" title="Open in a new tab">
       ${icon('ext')}
     </a>
@@ -163,12 +164,19 @@ function showVersion(reload = false) {
   revealPill()
   app.draft = null
   renderNotes()
+  syncFrames()
 
   const canvas = document.querySelector('.canvas')
+  if (gridMode()) {
+    canvas.innerHTML = optionGrid()
+    fitCards()
+    return applySplit()
+  }
+  canvas.querySelector('.board')?.remove()
   const shown = [...canvas.querySelectorAll('iframe.ready')].pop()
   if (!reload && shown?.dataset.at === app.route.ver + '/' + app.route.page) return
   canvas.querySelectorAll('iframe:not(.ready)').forEach((f) => f.remove()) // still loading, and out of date
-  canvas.querySelector('.pins').insertAdjacentHTML('beforebegin', pageFrame(pageScroll(shown)))
+  canvas.insertAdjacentHTML('beforeend', pageFrame(pageScroll(shown)))
   canvas.querySelector('iframe:not(.ready)').classList.add('incoming')
 }
 
@@ -185,7 +193,8 @@ function pageReady(frame) {
     frame.contentDocument.addEventListener('keydown', forwardKey)
   } catch (e) {}
   frame.classList.add('ready')
-  // the pages under this one go after the fade. The pins and the note box stay.
+  applySplit()
+  // the pages under this one go after the fade.
   const frames = [...frame.parentElement.querySelectorAll('iframe')]
   const older = frames.slice(0, frames.indexOf(frame))
   setTimeout(() => older.forEach((f) => f.remove()), 200)
@@ -210,6 +219,7 @@ function followPage(frame) {
   frame.dataset.at = app.route.ver + '/' + page
   history.replaceState(null, '', viewerHash(app.route.slug, app.route.ver, page))
   renderBar() // open in a new tab follows the page
+  syncFrames(frame)
 }
 
 function pageScroll(frame) {
@@ -225,7 +235,7 @@ function pageScroll(frame) {
 function forwardKey(e) {
   const own = e.defaultPrevented || e.target.closest?.('input, textarea, select, [contenteditable]')
   const modified = e.metaKey || e.ctrlKey || e.altKey
-  if (own || modified || !['Escape', 'ArrowLeft', 'ArrowRight', 'n'].includes(e.key)) return
+  if (own || modified || !['Escape', 'ArrowLeft', 'ArrowRight', 'n', 'd', 'g', 'k', '[', ']'].includes(e.key)) return
   document.dispatchEvent(new KeyboardEvent('keydown', { key: e.key }))
 }
 
@@ -263,5 +273,7 @@ async function followChanges(events) {
     location.hash = viewerHash(slug, newest, app.route.page)
     return
   }
-  showVersion(mine.some((e) => e.version === ver))
+  const changed = mine.some((e) => e.version === ver)
+  if (changed) await loadOptions(slug, ver, true)
+  showVersion(changed)
 }

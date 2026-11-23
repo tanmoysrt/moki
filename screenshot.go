@@ -19,7 +19,7 @@ More than one shot comes back as one labeled sheet. Each shot also has the URL o
 type shotIn struct {
 	Slug     string   `json:"slug" jsonschema:"project slug"`
 	Versions any      `json:"versions,omitempty" jsonschema:"\"v3\", [\"v2\", \"v3\"] or \"all\". Default: the newest version"`
-	Pages    any      `json:"pages,omitempty" jsonschema:"[\"index.html\", \"b.html\"] or \"all\" for every .html file. Default: index.html"`
+	Pages    any      `json:"pages,omitempty" jsonschema:"[\"index.html\", \"b.html?v=a\"], \"all\" for every .html file, or \"options\" for the page of each option. Default: index.html"`
 	Sizes    []string `json:"sizes,omitempty" jsonschema:"size names or WxH. Default: desktop and phone"`
 	Themes   string   `json:"themes,omitempty" jsonschema:"light, dark or both. Default: light"`
 	Full     bool     `json:"full,omitempty" jsonschema:"take the whole page height"`
@@ -139,10 +139,16 @@ func (s *Server) pickPages(slug, ver string, v any) ([]string, error) {
 		list = []string{"index.html"}
 	case len(list) == 1 && list[0] == "all":
 		return html, nil
+	case len(list) == 1 && list[0] == "options":
+		o := readOptions(s.store.VersionDir(slug, ver))
+		if o == nil {
+			return nil, fmt.Errorf("%s has no options", ver)
+		}
+		return o.pages(), nil
 	}
 	// A page can carry a query or a hash, for example page.html?v=a: the file must exist.
 	for _, page := range list {
-		if !hasFile(files, strings.SplitN(strings.SplitN(page, "#", 2)[0], "?", 2)[0]) {
+		if !hasFile(files, pageFile(page)) {
 			return nil, fmt.Errorf("page %q is not in %s. Its pages are %s", page, ver, strings.Join(html, ", "))
 		}
 	}

@@ -25,6 +25,7 @@ const app = {
   job: null, // the export that moki makes: {format, kit, done, id, error}
   draft: null, // a note the user types, on the spot they clicked
   picked: null, // the id of the fixed note whose pin shows
+  split: savedSplit(), // desktop and phone side by side
   down: false, // moki does not answer
   homeScroll: 0,
 }
@@ -73,6 +74,8 @@ async function route() {
       return location.replace(viewerHash(next.slug, detail.list[0].version))
     }
     delete app.fresh[next.slug]?.[next.ver]
+    await loadOptions(next.slug, next.ver)
+    if (app.route !== next) return
     if (prev.name === 'view' && prev.slug === next.slug && document.querySelector('.viewer')) return showVersion()
   }
   render()
@@ -87,6 +90,7 @@ function render() {
   document.title = viewing ? viewerTitle() : 'moki'
 
   if (viewing) {
+    applySplit()
     renderNotes()
     return revealPill()
   }
@@ -217,6 +221,7 @@ const actions = {
   shareNotes: toggleShareNotes,
   rename,
   notes: toggleNotes,
+  split: toggleSplit,
   approve,
   export: toggleExport,
   exportAs,
@@ -284,7 +289,9 @@ document.addEventListener('keydown', (e) => {
   if (app.route.name !== 'view') return
   if (e.key === 'ArrowLeft') step(-1)
   if (e.key === 'ArrowRight') step(1)
+  if (optionKey(e.key)) return
   if (e.key === 'n') toggleNotes()
+  if (e.key === 'd') toggleSplit()
   if (e.key === 'e' && !share) toggleExport()
 })
 

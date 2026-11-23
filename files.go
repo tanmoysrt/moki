@@ -21,15 +21,19 @@ func absPath(dir string) (string, error) {
 	return filepath.Clean(dir), nil
 }
 
-// copyTree copies the regular files of src into dst. It skips symlinks and .git.
+// copyTree copies the regular files of src into dst. It skips symlinks, and hidden files
+// and folders such as .git and .DS_Store.
 func copyTree(src, dst string) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(src, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() && d.Name() == ".git" {
-			return filepath.SkipDir
+		if rel, _ := filepath.Rel(src, p); rel != "." && isHidden(filepath.ToSlash(rel)) {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 		if !d.Type().IsRegular() {
 			return nil

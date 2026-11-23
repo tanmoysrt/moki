@@ -11,13 +11,27 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// AgentNotes is the text that get_project shows: the approved version, then each open
-// note with its id. Done notes are only counted, so the agent's context stays small.
-func (n *NoteStore) AgentNotes(slug string) string {
-	p := n.Read(slug)
+// agentNotes is the text that get_project shows: the approved version, the options of
+// the newest version with the kept ones, then each open note with its id, and the option
+// it is on. Done notes are only counted, so the agent's context stays small.
+func (s *Server) agentNotes(slug string) string {
+	p := s.notes.Read(slug)
 	var b strings.Builder
 	if p.Approved != "" {
 		fmt.Fprintf(&b, "Approved: %s\n", p.Approved)
+	}
+	b.WriteString(s.optionsText(slug, p.Kept))
+	opts := map[string]*Options{} // by version
+	optionOf := func(x Note) string {
+		o, ok := opts[x.Version]
+		if !ok {
+			o = readOptions(s.store.VersionDir(slug, x.Version))
+			opts[x.Version] = o
+		}
+		if o == nil {
+			return ""
+		}
+		return o.find(x.Page)
 	}
 	done, open := 0, 0
 	for _, x := range p.Notes {
@@ -28,7 +42,7 @@ func (n *NoteStore) AgentNotes(slug string) string {
 		if open++; open == 1 {
 			b.WriteString("Open notes, oldest first. Answer them with answer_notes:\n")
 		}
-		writeAgentNote(&b, x)
+		writeAgentNote(&b, x, optionOf(x))
 	}
 	if done > 0 {
 		fmt.Fprintf(&b, "%s done. They are not shown.\n", count(done, "note"))
@@ -47,11 +61,17 @@ func (s *Server) agentNotesText(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	writeText(w, r, s.notes.AgentNotes(slug))
+	writeText(w, r, s.agentNotes(slug))
 }
 
-func writeAgentNote(b *strings.Builder, x Note) {
+func writeAgentNote(b *strings.Builder, x Note, option string) {
 	fmt.Fprintf(b, "%s · %s", x.ID, x.Version)
+	if option != "" {
+		fmt.Fprintf(b, " · %s", option)
+	}
+	if x.View != "" {
+		fmt.Fprintf(b, " · %s", x.View)
+	}
 	if x.By != "" {
 		fmt.Fprintf(b, " · from %s, on the public link", x.By)
 	}

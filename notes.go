@@ -31,11 +31,21 @@ type Note struct {
 	Reply    string    `json:"reply,omitempty"` // the agent's answer
 	By       string    `json:"by,omitempty"`    // the name of a visitor of the public link
 	Key      string    `json:"key,omitempty"`   // a hash of the visitor's secret: only they can delete it
+	View     string    `json:"view,omitempty"`  // "phone" when it was pinned on the phone frame of the viewer
 }
 
 type ProjectNotes struct {
-	Approved string `json:"approved,omitempty"`
-	Notes    []Note `json:"notes"`
+	Approved string                  `json:"approved,omitempty"`
+	Kept     map[string][]KeptOption `json:"kept,omitempty"` // version -> the options to take further
+	Notes    []Note                  `json:"notes"`
+}
+
+// KeptOption is an option of a board that the user keeps for the next round:
+// part "Plans page", option "B", name "Comparison table".
+type KeptOption struct {
+	Part   string `json:"part"`
+	Option string `json:"option"`
+	Name   string `json:"name,omitempty"`
 }
 
 type NoteStore struct {
@@ -61,6 +71,7 @@ func (s *Server) noteRoutes() {
 	s.mux.HandleFunc("DELETE /api/projects/{slug}/notes/{id}", s.apiDeleteNote)
 	s.mux.HandleFunc("POST /api/projects/{slug}/notes/{id}/reopen", s.apiReopenNote)
 	s.mux.HandleFunc("POST /api/projects/{slug}/approve", s.apiApprove)
+	s.mux.HandleFunc("POST /api/projects/{slug}/keep", s.apiKeep)
 }
 
 func (s *Server) apiAddNote(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +93,9 @@ func newNote(w http.ResponseWriter, in *Note) bool {
 	}
 	in.ID, in.Time = strings.ToLower(rand.Text()[:8]), time.Now()
 	in.Done, in.Reply = "", ""
+	if in.View != "phone" {
+		in.View = ""
+	}
 	return true
 }
 

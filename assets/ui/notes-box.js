@@ -13,14 +13,18 @@ function placeDraft(at) {
       <div class="nrow"><span class="trunc">${esc(app.draft.target ? 'On ' + app.draft.target : app.draft.page)}</span>
       <span class="kbd">Enter</span></div>
       ${ask ? '<p class="nwhy">Your name shows on your notes. This browser keeps it.</p>' : ''}</div>`)
-    document.querySelector('.canvas').append(box)
+    document.querySelector('.vbody').append(box)
     box.addEventListener('keydown', draftKey)
     box.querySelector(ask ? '.nname' : 'textarea').focus()
   }
   if (!at) return
-  const canvas = document.querySelector('.canvas')
-  box.style.left = `${Math.max(8, Math.min(at.x - 8, canvas.clientWidth - box.offsetWidth - 8))}px`
-  box.style.top = `${Math.min(at.y + 20, canvas.clientHeight - box.offsetHeight - 8)}px`
+  // the box stays in the pane of the spot: the desktop page or the phone
+  const base = document.querySelector('.pins').getBoundingClientRect()
+  const pane = (at.frame.closest('.ppane') || document.querySelector('.canvas')).getBoundingClientRect()
+  const left = pane.left - base.left
+  const top = pane.top - base.top
+  box.style.left = `${Math.max(left + 8, Math.min(at.x - 8, left + pane.width - box.offsetWidth - 8))}px`
+  box.style.top = `${Math.min(at.y + 20, top + pane.height - box.offsetHeight - 8)}px`
 }
 
 function draftKey(e) {

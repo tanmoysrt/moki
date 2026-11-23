@@ -1,0 +1,290 @@
+/* Options: the grid of a version with options.json, and the option bar of one option. */
+
+.board {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 8px 24px 48px;
+  background: var(--page);
+}
+
+.board h2 {
+  margin: 24px 0 12px;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--hi);
+}
+
+.board h2 span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dim);
+}
+
+.ogrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.ocard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--xs);
+  transition: box-shadow 0.15s ease;
+}
+
+.ocard:hover {
+  box-shadow: var(--lift);
+}
+
+.ocard.on {
+  box-shadow: 0 0 0 2px var(--live);
+}
+
+/* the whole card opens the option; Keep sits above it */
+.ohit {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.ohit:focus-visible {
+  outline: 2px solid var(--live);
+  outline-offset: -2px;
+}
+
+.shot {
+  position: relative;
+  overflow: hidden;
+  background: var(--accented);
+}
+
+.shot iframe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  background: var(--page);
+}
+
+.ocard .meta {
+  padding: 10px 10px 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.ocard .meta > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.ocard .meta b {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--hi);
+}
+
+.ocard .meta b i {
+  margin-right: 6px;
+  font-style: normal;
+  color: var(--dim);
+}
+
+.ocard .meta p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ocard .meta em {
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--live);
+}
+
+.okeep {
+  position: relative;
+  z-index: 1;
+  height: 30px;
+  padding: 0 11px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hi);
+}
+
+.okeep:hover:not(:disabled) {
+  background: var(--accented);
+}
+
+.okeep.on,
+.okeep.on:hover:not(:disabled) {
+  background: var(--live);
+  box-shadow: none;
+  color: #fff;
+}
+
+.okeep svg {
+  width: 14px;
+  height: 14px;
+}
+
+.okeep:disabled {
+  cursor: default;
+}
+
+/* ---------- the option bar ---------- */
+
+.onav {
+  min-width: 0;
+  margin-left: 6px;
+  padding-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: -1px 0 0 var(--border);
+}
+
+.onav .ib svg {
+  width: 18px;
+  height: 18px;
+}
+
+.onav .ib:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.oname {
+  min-width: 0;
+  padding: 0 4px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.oname span {
+  color: var(--muted);
+}
+
+.oname svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--dim);
+}
+
+.oname b {
+  font-weight: 600;
+  color: var(--hi);
+}
+
+.onav .tag {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--accented);
+  color: var(--hi);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.ocount {
+  min-width: 40px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--dim);
+}
+
+.seg {
+  padding: 2px;
+  flex: none;
+  display: flex;
+  gap: 2px;
+  border-radius: 9px;
+  background: var(--accented);
+}
+
+.seg a {
+  height: 26px;
+  padding: 0 9px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.seg a:hover {
+  color: var(--hi);
+}
+
+.seg a.on {
+  background: var(--card);
+  color: var(--hi);
+  box-shadow: var(--xs);
+}
+
+/* a narrow bar keeps the option, the steps and Keep */
+@media (max-width: 1100px) {
+  .onav .oname span,
+  .onav .oname svg,
+  .ocount {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .board {
+    padding: 4px 16px 32px;
+  }
+
+  .ogrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vbar:has(.onav) .vtitle,
+  .onav .seg,
+  .onav .oname b {
+    display: none;
+  }
+
+  .onav .oname {
+    flex: none;
+  }
+
+  .onav {
+    margin-left: 0;
+    padding-left: 0;
+    box-shadow: none;
+  }
+}

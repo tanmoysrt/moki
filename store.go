@@ -30,10 +30,11 @@ type Project struct {
 }
 
 type Version struct {
-	Name  string    `json:"version"`
-	Title string    `json:"title"`
-	Note  string    `json:"note"`
-	Time  time.Time `json:"time"`
+	Name    string    `json:"version"`
+	Title   string    `json:"title"`
+	Note    string    `json:"note"`
+	Time    time.Time `json:"time"`
+	Options bool      `json:"options,omitempty"` // the version has options.json: the viewer shows a grid
 }
 
 var (
@@ -81,7 +82,8 @@ func (s *Store) Versions(slug string) []Version {
 		}
 		dir := filepath.Join(s.dir, slug, e.Name())
 		title, note := pageMeta(filepath.Join(dir, "index.html"))
-		list = append(list, Version{Name: e.Name(), Title: title, Note: note, Time: stamp(dir)})
+		_, err := os.Stat(filepath.Join(dir, optionsFile))
+		list = append(list, Version{Name: e.Name(), Title: title, Note: note, Time: stamp(dir), Options: err == nil})
 	}
 	sort.Slice(list, func(i, j int) bool { return versionNum(list[i].Name) < versionNum(list[j].Name) })
 	return list

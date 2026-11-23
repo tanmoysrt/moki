@@ -7,38 +7,48 @@ function shownFrame() {
 }
 
 // placePins puts each open note of this page on its element, the fixed note that is
-// picked, and the draft. It runs on each scroll and resize of the page.
+// picked, and the draft. It runs on each scroll and resize of the page. The pins layer
+// covers the desktop page and the phone, so a spot is in the coordinates of the layer.
 function placePins() {
   const layer = document.querySelector('.pins')
   if (!layer) return
-  const doc = frameDoc(shownFrame())
-  const show = app.notesOpen && doc
+  const show = app.notesOpen && shownFrame()
   const open = openNotes()
   let html = ''
   if (show) {
-    open.forEach((n, i) => (html += pinAt(doc, n, 'num', i + 1)))
+    open.forEach((n, i) => (html += pinAt(n, 'num', i + 1)))
     const picked = fixedNotes().find((n) => n.id === app.picked)
-    if (picked) html += pinAt(doc, picked, 'ok', icon('check'))
-    const at = app.draft && spot(doc, app.draft)
+    if (picked) html += pinAt(picked, 'ok', icon('check'))
+    const at = app.draft && spot(app.draft)
     if (at) html += `<i class="pin num open" style="left:${at.x}px;top:${at.y}px">${open.length + 1}</i>`
   }
   layer.innerHTML = html
-  placeDraft(show && app.draft && spot(doc, app.draft))
+  placeDraft(show && app.draft && spot(app.draft))
 }
 
-function pinAt(doc, n, kind, label) {
+function pinAt(n, kind, label) {
   if (n.page !== currentPage()) return ''
-  const at = spot(doc, n)
+  const at = spot(n)
   return at ? `<i class="pin ${kind}" data-note="${n.id}" style="left:${at.x}px;top:${at.y}px">${label}</i>` : ''
 }
 
-// spot is where a note sits on the page in the viewer. A note in a frame of the page,
-// such as a board option, has a selector for each frame: "iframe >>> button".
-function spot(doc, n) {
+// spot is where a note sits in the viewer: in its frame (fx, fy), and on the pins layer
+// (x, y). A note in a frame of the page, such as a board option, has a selector for each
+// frame: "iframe >>> button". With clip, a spot out of view is null.
+function spot(n, clip = true) {
+  const frame = viewFrame(n.view)
+  const doc = frameDoc(frame)
+  if (!doc) return null
   const el = n.el?.isConnected ? n.el : findEl(doc, n.selector)
   const r = el && rectIn(el, doc)
   if (!r || (!r.width && !r.height)) return null
-  return { x: r.left + n.x * r.width, y: r.top + n.y * r.height }
+  const fx = r.left + n.x * r.width
+  const fy = r.top + n.y * r.height
+  if (clip && (fx < 0 || fy < 0 || fx > frame.clientWidth || fy > frame.clientHeight)) return null
+  const f = frame.getBoundingClientRect()
+  const base = document.querySelector('.pins').getBoundingClientRect()
+  const scale = frame.clientWidth ? f.width / frame.clientWidth : 1
+  return { x: f.left - base.left + fx * scale, y: f.top - base.top + fy * scale, fx, fy, frame }
 }
 
 // notesFrame hooks a page that loaded in the viewer: clicks pin notes while the list
@@ -67,10 +77,12 @@ function frameLoaded(frame) {
   placePins()
 }
 
-// pageDocs is the page on screen and the pages in its frames.
-function pageDocs(doc = frameDoc(shownFrame())) {
+// pageDocs is the page on screen, on the desktop and the phone, and the pages in its frames.
+const pageDocs = () => [shownFrame(), phoneFrame()].flatMap((f) => docsIn(frameDoc(f)))
+
+function docsIn(doc) {
   if (!doc) return []
-  return [doc, ...[...doc.querySelectorAll('iframe')].flatMap((f) => pageDocs(frameDoc(f)))]
+  return [doc, ...[...doc.querySelectorAll('iframe')].flatMap((f) => docsIn(frameDoc(f)))]
 }
 
 // aimCursor shows a crosshair on the page while a click pins a note.
@@ -89,15 +101,18 @@ function aimCursor() {
 }
 
 function pageClick(e) {
+  // not instanceof Element: the page in the frame has its own Element
+  const el = e.target.nodeType === 1 ? e.target : e.target.parentElement
   if (!app.notesOpen) return
   e.preventDefault()
   e.stopPropagation()
-  // not instanceof Element: the page in the frame has its own Element
-  const el = e.target.nodeType === 1 ? e.target : e.target.parentElement
   const r = el.getBoundingClientRect()
+  let top = el.ownerDocument.defaultView.frameElement // the frame of the viewer that holds el
+  while (top && top.ownerDocument !== document) top = top.ownerDocument.defaultView.frameElement
   app.picked = null
   app.draft = {
     el,
+    view: top?.closest('.ppane') ? 'phone' : '',
     page: currentPage(),
     selector: framePath(el),
     target: describe(el) + inFrame(el),

@@ -33,13 +33,18 @@ function notesPanel() {
   const fixed = fixedNotes()
   return `<div class="nhead"><b>Notes on ${ver}</b><span class="num">${open.length ? open.length + ' open' : ''}</span>
       <div class="sp"></div><button class="ib sm close" data-act="notes" aria-label="Close">${icon('x')}</button></div>
-    <div class="nscroll">
+    <div class="nscroll">${keptGroup()}
       <ul class="nlist">${open.map(noteRow).join('')}</ul>
-      <p class="nhint">${touch ? 'Tap' : 'Click'} the page to pin a note.</p>
+      <p class="nhint">${noteHint()}</p>
       ${fixed.length ? `<div class="ngroup"><b>Fixed in ${ver}</b><span class="num">${fixed.length}</span></div>
       <ul class="nlist fixed">${fixed.map(fixedRow).join('')}</ul>` : ''}
     </div>
     ${notesFoot()}`
+}
+
+function noteHint() {
+  if (gridMode()) return 'Open an option to pin a note on it.'
+  return `${touch ? 'Tap' : 'Click'} the page${splitOn() ? ' or the phone' : ''} to pin a note.`
 }
 
 function notesFoot() {
@@ -67,9 +72,9 @@ function fixedRow(n) {
 
 // noteMeta: who wrote it, the version it came from, and where it is.
 function noteMeta(n) {
-  const page = n.page === 'index.html' ? '' : n.page
+  const page = optionName(n.page) || (n.page === 'index.html' ? '' : n.page)
   const from = n.version === app.route.ver ? '' : `from ${n.version}`
-  const lead = [n.by, from].filter(Boolean).map((x) => `<em>${esc(x)}</em>`)
+  const lead = [n.view === 'phone' && 'Phone', n.by, from].filter(Boolean).map((x) => `<em>${esc(x)}</em>`)
   return [...lead, ...[page, n.target].filter(Boolean).map(esc)].join(' · ')
 }
 
@@ -88,6 +93,7 @@ function renderNotes() {
   }
   aimCursor()
   placePins()
+  renderKept()
 }
 
 function toggleNotes() {
@@ -138,9 +144,8 @@ function openNote(id) {
     return
   }
   renderNotes()
-  const frame = shownFrame()
-  const at = spot(frameDoc(frame), n)
-  if (at) frame.contentWindow.scrollBy({ top: at.y - frame.clientHeight / 3, behavior: 'smooth' })
+  const at = spot(n, false)
+  if (at) at.frame.contentWindow.scrollBy({ top: at.fy - at.frame.clientHeight / 3, behavior: 'smooth' })
   const pin = document.querySelector(`.pins [data-note="${id}"]`)
   if (pin) replay(pin, 'flash')
 }

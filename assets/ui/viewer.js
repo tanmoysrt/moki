@@ -7,7 +7,7 @@ function viewer() {
     <div class="vbar">${viewerBar()}</div>
     <div class="vbody">
       <div class="canvas">${pageFrame()}<div class="pins"></div></div>
-      ${share ? '' : '<aside class="npanel" hidden></aside>'}
+      ${canNote() ? '<aside class="npanel" hidden></aside>' : ''}
     </div>
     <div class="stepper num">${stepper()}</div>
   </div>`
@@ -25,12 +25,13 @@ function viewerBar() {
     <a class="ib" href="${pageURL(slug, ver, app.route.page)}" target="_blank" aria-label="Open in a new tab" title="Open in a new tab">
       ${icon('ext')}
     </a>
-    ${share ? '' : exportButton() + notesButton()}`
+    ${share ? '' : exportButton()}${notesButton()}`
 }
 
 // padlock says if the project is public. Its card has a switch that turns the public
-// link on or off, and the link with a copy button when it is on. The bar renders again on
-// each live event, so the card fades in only when it opens.
+// link on or off, and the link with a copy button when it is on. A second switch lets
+// people with the link leave notes. The bar renders again on each live event, so the
+// card fades in only when it opens.
 function padlock(slug, path) {
   const open = Boolean(path)
   const url = esc(location.origin + path)
@@ -43,7 +44,12 @@ function padlock(slug, path) {
       ${open ? `<div class="link">
         <span class="trunc">${url}</span>
         <button class="ib" data-copy="${url}" aria-label="Copy link" title="Copy link">${icon('copy')}</button>
-      </div>` : ''}
+      </div>
+      <div class="row more">
+        <b>Notes from people with the link</b>
+        <button class="switch" role="switch" aria-checked="${Boolean(app.detail[slug].shareNotes)}" aria-label="Notes from people with the link" data-act="shareNotes"><i></i></button>
+      </div>
+      <p>They add notes with their name, and see all notes. They cannot approve.</p>` : ''}
     </div>`
   app.linkFade = false
   return `<button class="ib${app.linkOpen ? ' on' : ''}" data-act="link" aria-label="${open ? 'Public' : 'Private'}"
@@ -77,13 +83,32 @@ async function togglePublic() {
       body: JSON.stringify({ public: want }),
     })
     if (res.ok) {
-      detail.share = (await res.json()).share
+      ;({ share: detail.share, shareNotes: detail.shareNotes } = await res.json())
       const p = project(slug)
       if (p) p.share = detail.share
     }
   } catch (e) {} // the switch goes back
   app.sharing = false
   if (app.route.slug === slug) setTimeout(renderBar, 150) // after the switch moved
+}
+
+// toggleShareNotes lets people with the link leave notes, or stops it.
+async function toggleShareNotes(button) {
+  if (app.sharing) return
+  const { slug } = app.route
+  const detail = app.detail[slug]
+  button.setAttribute('aria-checked', !detail.shareNotes)
+  app.sharing = true
+  try {
+    const res = await fetch(`/api/projects/${encodeURIComponent(slug)}/share`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ public: true, notes: !detail.shareNotes }),
+    })
+    if (res.ok) detail.shareNotes = (await res.json()).shareNotes
+  } catch (e) {} // the switch goes back
+  app.sharing = false
+  if (app.route.slug === slug) setTimeout(renderBar, 150)
 }
 
 // showLinkOff tells a visitor that the project of the link went private.

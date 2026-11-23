@@ -24,6 +24,7 @@ const app = {
   exportFade: false,
   job: null, // the export that moki makes: {format, kit, done, id, error}
   draft: null, // a note the user types, on the spot they clicked
+  picked: null, // the id of the fixed note whose pin shows
   down: false, // moki does not answer
   homeScroll: 0,
 }
@@ -57,6 +58,7 @@ async function route() {
   if (next.slug !== prev.slug) app.linkOpen = false
   app.exportOpen = false
   app.draft = null
+  app.picked = null
 
   if (next.name === 'view' && !app.down) {
     let detail
@@ -212,6 +214,8 @@ const actions = {
   close: closeConnect,
   link: toggleLink,
   public: togglePublic,
+  shareNotes: toggleShareNotes,
+  rename,
   notes: toggleNotes,
   approve,
   export: toggleExport,
@@ -280,7 +284,7 @@ document.addEventListener('keydown', (e) => {
   if (app.route.name !== 'view') return
   if (e.key === 'ArrowLeft') step(-1)
   if (e.key === 'ArrowRight') step(1)
-  if (e.key === 'n' && !share) toggleNotes()
+  if (e.key === 'n') toggleNotes()
   if (e.key === 'e' && !share) toggleExport()
 })
 

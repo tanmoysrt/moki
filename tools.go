@@ -72,6 +72,7 @@ func (s *Server) addTools(srv *mcp.Server) {
 		s.download)
 	addTool(s, srv, "export", exportDesc, s.export)
 	addTool(s, srv, "share", shareDesc, s.share)
+	addTool(s, srv, "answer_notes", answerDesc, s.answerNotes)
 	addTool(s, srv, "list_memory",
 		"List the memory files: slug, time and first line. With query, search every memory instead: "+
 			"each line that has all the words, with its heading and the lines next to it. "+
@@ -151,7 +152,7 @@ func (s *Server) getProject(ctx context.Context, in slugIn) ([]mcp.Content, erro
 		Share  string            `json:"share,omitempty"` // the public link, when there is one
 		Memory string            `json:"memory"`
 		Shared map[string]string `json:"shared,omitempty"` // memories named in a "uses:" line
-		Notes  string            `json:"notes,omitempty"`  // what the user pinned in the viewer
+		Notes  string            `json:"notes,omitempty"`  // the open notes from the viewer, with ids
 		List   []ver             `json:"list"`
 	}{Project: p, Memory: s.store.ReadMemory(in.Slug), Notes: s.notes.AgentNotes(in.Slug)}
 	out.Shared = s.store.Shared(out.Memory)
